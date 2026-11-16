@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Pineapple from "@/components/Pineapple";
+
+type Department = { id: string; code: string | null; name: string };
 
 export default function LoginPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [employeeCode, setEmployeeCode] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/departments")
+      .then((res) => res.json())
+      .then((data) => setDepartments(data.departments || []))
+      .catch(() => setDepartments([]));
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +30,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, employeeCode }),
+        body: JSON.stringify({ fullName, employeeCode, ...(departmentId ? { departmentId } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -101,6 +112,27 @@ export default function LoginPage() {
               placeholder="S-000"
               required
             />
+          </div>
+          <div>
+            <label className="label" htmlFor="departmentId">
+              Phòng ban <span className="font-normal text-muted">(chọn khi đăng ký lần đầu)</span>
+            </label>
+            <select
+              id="departmentId"
+              className="input"
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+            >
+              <option value="">Chọn phòng ban</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.code ? `${department.code} · ` : ""}{department.name}
+                </option>
+              ))}
+            </select>
+            {departments.length === 0 && (
+              <p className="mt-1 text-xs text-muted">Chưa tải được danh sách phòng ban. Nếu đăng ký lần đầu, vui lòng thử tải lại trang.</p>
+            )}
           </div>
           {error && <p className="text-sm font-medium text-pink-600">{error}</p>}
           <button type="submit" disabled={loading} className="btn-primary w-full">

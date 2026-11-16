@@ -25,18 +25,43 @@ async function main() {
   });
   console.log(`Admin account ready: ${adminUsername} / ${adminPassword}`);
 
+  const departments = [
+    { code: "01", name: "P. Kinh doanh Sỉ", sortOrder: 1 },
+    { code: "02", name: "P. Kinh doanh Lẻ", sortOrder: 2 },
+    { code: "03", name: "P. Kế toán – Nhân sự", sortOrder: 3 },
+    { code: "04", name: "P. Phát triển Sản phẩm & Media", sortOrder: 4 },
+    { code: "05", name: "P. Kế hoạch & Vận hành Sản xuất", sortOrder: 5 },
+    { code: "06", name: "Sản xuất (gồm Tổ Sáp, Tổ Đúc, Tổ Nguội, Tổ Khắc Cưa – Xi mạ)", sortOrder: 6 },
+    { code: "07", name: "P. QC – Đóng gói", sortOrder: 7 },
+    { code: "08", name: "P. Kho", sortOrder: 8 },
+  ];
+  const departmentIds = new Map<string, string>();
+  for (const department of departments) {
+    const record = await prisma.department.upsert({
+      where: { code: department.code },
+      update: {},
+      create: department,
+    });
+    departmentIds.set(department.code, record.id);
+  }
+
   const employees = [
-    { employeeCode: "NV0001", fullName: "Nguyễn Văn An", department: "Kinh doanh" },
-    { employeeCode: "NV0002", fullName: "Trần Thị Bình", department: "Marketing" },
-    { employeeCode: "NV0003", fullName: "Lê Hoàng Cường", department: "Kỹ thuật" },
-    { employeeCode: "NV0004", fullName: "Phạm Thị Dung", department: "Nhân sự" },
-    { employeeCode: "NV0005", fullName: "Hoàng Văn Em", department: "Kỹ thuật" },
+    { employeeCode: "NV0001", fullName: "Nguyễn Văn An", departmentCode: "01" },
+    { employeeCode: "NV0002", fullName: "Trần Thị Bình", departmentCode: "04" },
+    { employeeCode: "NV0003", fullName: "Lê Hoàng Cường", departmentCode: "06" },
+    { employeeCode: "NV0004", fullName: "Phạm Thị Dung", departmentCode: "03" },
+    { employeeCode: "NV0005", fullName: "Hoàng Văn Em", departmentCode: "08" },
   ];
   for (const e of employees) {
     await prisma.employee.upsert({
       where: { employeeCode: e.employeeCode },
       update: {},
-      create: { ...e, status: "ACTIVE" },
+      create: {
+        employeeCode: e.employeeCode,
+        fullName: e.fullName,
+        departmentId: departmentIds.get(e.departmentCode),
+        status: "ACTIVE",
+      },
     });
   }
   console.log(`Seeded ${employees.length} employees.`);

@@ -13,7 +13,14 @@ export async function GET(req: NextRequest) {
     where: gameId ? { gameId } : undefined,
     orderBy: { playedAt: "desc" },
     include: {
-      employee: { select: { fullName: true, employeeCode: true, department: true } },
+      employee: {
+        select: {
+          fullName: true,
+          employeeCode: true,
+          legacyDepartment: true,
+          departmentInfo: { select: { name: true } },
+        },
+      },
       game: { select: { title: true } },
     },
   });
@@ -33,7 +40,7 @@ export async function GET(req: NextRequest) {
     ...results.map((r) => [
       r.employee.employeeCode,
       r.employee.fullName,
-      r.employee.department || "",
+      r.employee.departmentInfo?.name ?? r.employee.legacyDepartment ?? "",
       r.game.title,
       r.totalScore,
       r.correctCount,

@@ -11,21 +11,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Thông tin đăng nhập không hợp lệ." }, { status: 400 });
   }
 
-  const { employeeCode, fullName } = parsed.data;
-  let employee = await prisma.employee.findUnique({ where: { employeeCode } });
+  const { employeeCode, fullName, departmentId } = parsed.data;
+  let employee = await prisma.employee.findUnique({
+    where: { employeeCode },
+    include: { departmentInfo: { select: { name: true } } },
+  });
 
   if (!employee) {
+    if (!departmentId) {
+      return NextResponse.json({ error: "Chọn phòng ban để đăng ký lần đầu." }, { status: 400 });
+    }
+    const department = await prisma.department.findFirst({
+      where: { id: departmentId, isActive: true },
+      select: { id: true },
+    });
+    if (!department) {
+      return NextResponse.json({ error: "Phòng ban không hợp lệ hoặc đã ngừng hoạt động." }, { status: 400 });
+    }
+
     // First time this employeeCode is used — self-register it with the
     // given name. Later logins with the same code must match this name,
     // which is what stops someone else from "claiming" an existing code.
     try {
       employee = await prisma.employee.create({
-        data: { employeeCode, fullName, status: "ACTIVE" },
+        data: { employeeCode, fullName, departmentId: department.id, status: "ACTIVE" },
+        include: { departmentInfo: { select: { name: true } } },
       });
     } catch (e) {
       // Lost a race with a concurrent first-time login using the same code.
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        employee = await prisma.employee.findUnique({ where: { employeeCode } });
+        employee = await prisma.employee.findUnique({
+          where: { employeeCode },
+          include: { departmentInfo: { select: { name: true } } },
+        });
       } else {
         throw e;
       }
@@ -50,6 +68,6 @@ export async function POST(req: NextRequest) {
 
   await setEmployeeSession(employee.id);
   return NextResponse.json({
-    employee: { id: employee.id, fullName: employee.fullName, department: employee.department },
+    employee: { id: employee.id, fullName: employee.fullName, department: employee.departmentInfo?.name ?? employee.legacyDepartment },
   });
 }

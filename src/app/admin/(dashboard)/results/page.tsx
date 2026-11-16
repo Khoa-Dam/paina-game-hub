@@ -11,7 +11,17 @@ export default async function AdminResultsPage({
     where: sp.gameId ? { gameId: sp.gameId } : undefined,
     orderBy: { playedAt: "desc" },
     take: 300,
-    include: { employee: { select: { fullName: true, employeeCode: true, department: true } }, game: { select: { title: true } } },
+    include: {
+      employee: {
+        select: {
+          fullName: true,
+          employeeCode: true,
+          legacyDepartment: true,
+          departmentInfo: { select: { name: true } },
+        },
+      },
+      game: { select: { title: true } },
+    },
   });
 
   return (
@@ -51,7 +61,7 @@ export default async function AdminResultsPage({
               <tr key={r.id} className="border-b border-border/60 last:border-0">
                 <td className="py-2 pr-4">{r.employee.employeeCode}</td>
                 <td className="py-2 pr-4 font-medium text-ink">{r.employee.fullName}</td>
-                <td className="py-2 pr-4">{r.employee.department || "-"}</td>
+                <td className="py-2 pr-4">{r.employee.departmentInfo?.name ?? r.employee.legacyDepartment ?? "-"}</td>
                 <td className="py-2 pr-4">{r.game.title}</td>
                 <td className="py-2 pr-4 font-bold text-lime-700">{r.totalScore}</td>
                 <td className="py-2 pr-4">

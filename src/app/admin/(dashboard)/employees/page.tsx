@@ -2,28 +2,53 @@
 
 import { useEffect, useRef, useState } from "react";
 
+type Department = {
+  id: string;
+  code: string | null;
+  name: string;
+  isActive: boolean;
+};
+
 type Employee = {
   id: string;
   employeeCode: string;
   fullName: string;
   email: string | null;
-  department: string | null;
+  departmentId: string | null;
+  departmentInfo: Department | null;
+  legacyDepartment: string | null;
   status: "ACTIVE" | "INACTIVE";
 };
 
+const EMPTY_FORM = { employeeCode: "", fullName: "", email: "", departmentId: "" };
+
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<Employee[] | null>(null);
-  const [form, setForm] = useState({ employeeCode: "", fullName: "", email: "", department: "" });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ employeeCode: "", fullName: "", email: "", departmentId: "" });
   const [error, setError] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function load() {
-    fetch("/api/admin/employees")
-      .then((r) => r.json())
-      .then((d) => setEmployees(d.employees || []));
+  async function load() {
+    const [employeeRes, departmentRes] = await Promise.all([
+      fetch("/api/admin/employees"),
+      fetch("/api/admin/departments"),
+    ]);
+    const [employeeData, departmentData] = await Promise.all([employeeRes.json(), departmentRes.json()]);
+    if (!employeeRes.ok || !departmentRes.ok) {
+      setError("Không thể tải nhân sự hoặc danh sách phòng ban.");
+      return;
+    }
+    setEmployees(employeeData.employees || []);
+    setDepartments(departmentData.departments || []);
   }
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function createEmployee(e: React.FormEvent) {
     e.preventDefault();
@@ -38,23 +63,60 @@ export default function AdminEmployeesPage() {
       setError(typeof data.error === "string" ? data.error : "Không thể tạo nhân sự.");
       return;
     }
-    setForm({ employeeCode: "", fullName: "", email: "", department: "" });
-    load();
+    setForm(EMPTY_FORM);
+    await load();
   }
 
-  async function toggleStatus(emp: Employee) {
-    await fetch(`/api/admin/employees/${emp.id}`, {
+  function startEdit(employee: Employee) {
+    setEditingId(employee.id);
+    setEditForm({
+      employeeCode: employee.employeeCode,
+      fullName: employee.fullName,
+      email: employee.email || "",
+      departmentId: employee.departmentId || "",
+    });
+    setError(null);
+  }
+
+  async function saveEdit(id: string) {
+    setSavingEdit(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/employees/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeCode: editForm.employeeCode,
+          fullName: editForm.fullName,
+          email: editForm.email,
+          departmentId: editForm.departmentId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Không thể cập nhật nhân sự.");
+        return;
+      }
+      setEditingId(null);
+      await load();
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function toggleStatus(employee: Employee) {
+    await fetch(`/api/admin/employees/${employee.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: emp.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }),
+      body: JSON.stringify({ status: employee.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }),
     });
-    load();
+    await load();
   }
 
   async function remove(id: string) {
     if (!confirm("Xóa nhân sự này?")) return;
     await fetch(`/api/admin/employees/${id}`, { method: "DELETE" });
-    load();
+    await load();
   }
 
   async function importCsv(file: File) {
@@ -67,12 +129,19 @@ export default function AdminEmployeesPage() {
     });
     const data = await res.json();
     if (res.ok) {
-      setImportMessage(`Đã thêm ${data.created}, cập nhật ${data.updated}, bỏ qua ${data.skipped}.`);
-      load();
+      const invalid = data.invalidDepartments?.length
+        ? ` Phòng ban không khớp danh mục: ${data.invalidDepartments.join(", ")}.`
+        : "";
+      setImportMessage(`Đã thêm ${data.created}, cập nhật ${data.updated}, bỏ qua ${data.skipped}.${invalid}`);
+      await load();
     } else {
       setImportMessage(data.error || "Import thất bại.");
     }
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function departmentLabel(employee: Employee) {
+    return employee.departmentInfo?.name || employee.legacyDepartment || "Chưa phân loại";
   }
 
   return (
@@ -82,7 +151,7 @@ export default function AdminEmployeesPage() {
       <div className="card space-y-3">
         <h2 className="font-heading text-lg font-bold text-ink">Import CSV</h2>
         <p className="text-sm text-muted">
-          Cột: employeeCode, fullName, email, department, status (ACTIVE/INACTIVE).
+          Cột: employeeCode, fullName, email, department, status (ACTIVE/INACTIVE). Phòng ban nhập theo mã hoặc tên trong danh mục.
         </p>
         <input
           ref={fileRef}
@@ -111,60 +180,77 @@ export default function AdminEmployeesPage() {
         <input
           className="input"
           placeholder="Email"
+          type="email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
-        <input
+        <select
           className="input"
-          placeholder="Phòng ban"
-          value={form.department}
-          onChange={(e) => setForm({ ...form, department: e.target.value })}
-        />
-        <button type="submit" className="btn-primary">
-          + Thêm
-        </button>
+          value={form.departmentId}
+          onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
+          required
+        >
+          <option value="">Chọn phòng ban</option>
+          {departments.filter((department) => department.isActive).map((department) => (
+            <option key={department.id} value={department.id}>
+              {department.code ? `${department.code} · ` : ""}{department.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="btn-primary">+ Thêm</button>
       </form>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {!employees && <p className="text-muted">Đang tải...</p>}
       {employees && (
-        <table className="w-full card text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-muted">
-              <th className="py-2 pr-4">Mã NV</th>
-              <th className="py-2 pr-4">Họ tên</th>
-              <th className="py-2 pr-4">Email</th>
-              <th className="py-2 pr-4">Phòng ban</th>
-              <th className="py-2 pr-4">Trạng thái</th>
-              <th className="py-2 pr-4">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((emp) => (
-              <tr key={emp.id} className="border-b border-border/60 last:border-0">
-                <td className="py-2 pr-4 font-medium text-ink">{emp.employeeCode}</td>
-                <td className="py-2 pr-4">{emp.fullName}</td>
-                <td className="py-2 pr-4 text-muted">{emp.email || "-"}</td>
-                <td className="py-2 pr-4">{emp.department || "-"}</td>
-                <td className="py-2 pr-4">
-                  <span className={`badge ${emp.status === "ACTIVE" ? "bg-lime-200 text-lime-800" : "bg-gray-200 text-gray-600"}`}>
-                    {emp.status === "ACTIVE" ? "Hoạt động" : "Ngừng hoạt động"}
-                  </span>
-                </td>
-                <td className="py-2 pr-4">
-                  <div className="flex gap-2">
-                    <button onClick={() => toggleStatus(emp)} className="text-xs text-ink hover:underline">
-                      {emp.status === "ACTIVE" ? "Tạm khóa" : "Mở lại"}
-                    </button>
-                    <button onClick={() => remove(emp.id)} className="text-xs text-red-500 hover:text-red-700">
-                      Xóa
-                    </button>
-                  </div>
-                </td>
+        <div className="card overflow-x-auto p-0">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted">
+                <th className="px-4 py-3">Mã NV</th>
+                <th className="px-4 py-3">Họ tên</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Phòng ban</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3">Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {employees.map((employee) => editingId === employee.id ? (
+                <tr key={employee.id} className="border-b border-border/60 align-top">
+                  <td className="px-2 py-2"><input className="input min-w-24" value={editForm.employeeCode} onChange={(e) => setEditForm({ ...editForm, employeeCode: e.target.value })} aria-label="Mã nhân viên" /></td>
+                  <td className="px-2 py-2"><input className="input min-w-36" value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} aria-label="Họ tên" /></td>
+                  <td className="px-2 py-2"><input className="input min-w-36" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} aria-label="Email" /></td>
+                  <td className="px-2 py-2"><select className="input min-w-48" value={editForm.departmentId} onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value })} aria-label="Phòng ban">
+                    <option value="">Chưa phân loại</option>
+                    {departments.map((department) => <option key={department.id} value={department.id} disabled={!department.isActive && employee.departmentId !== department.id}>{department.code ? `${department.code} · ` : ""}{department.name}{department.isActive ? "" : " (đã ngừng)"}</option>)}
+                  </select>
+                    {employee.legacyDepartment && !employee.departmentInfo && <p className="mt-1 text-xs text-amber-700">Tên cũ: {employee.legacyDepartment}</p>}
+                  </td>
+                  <td className="px-4 py-3">{employee.status === "ACTIVE" ? "Hoạt động" : "Ngừng hoạt động"}</td>
+                  <td className="px-2 py-3"><div className="flex gap-2 whitespace-nowrap"><button onClick={() => void saveEdit(employee.id)} disabled={savingEdit} className="text-xs font-semibold text-ink hover:underline disabled:opacity-50">Lưu</button><button onClick={() => setEditingId(null)} className="text-xs text-muted hover:underline">Hủy</button></div></td>
+                </tr>
+              ) : (
+                <tr key={employee.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-4 py-3 font-medium text-ink">{employee.employeeCode}</td>
+                  <td className="px-4 py-3">{employee.fullName}</td>
+                  <td className="px-4 py-3 text-muted">{employee.email || "-"}</td>
+                  <td className="px-4 py-3">{departmentLabel(employee)}{employee.legacyDepartment && !employee.departmentInfo && <span className="ml-1 text-xs text-amber-700">(cần gán lại)</span>}</td>
+                  <td className="px-4 py-3">
+                    <span className={`badge ${employee.status === "ACTIVE" ? "bg-lime-200 text-lime-800" : "bg-gray-200 text-gray-600"}`}>
+                      {employee.status === "ACTIVE" ? "Hoạt động" : "Ngừng hoạt động"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3"><div className="flex gap-3 whitespace-nowrap">
+                    <button onClick={() => startEdit(employee)} className="text-xs text-ink hover:underline">Sửa</button>
+                    <button onClick={() => void toggleStatus(employee)} className="text-xs text-ink hover:underline">{employee.status === "ACTIVE" ? "Tạm khóa" : "Mở lại"}</button>
+                    <button onClick={() => void remove(employee.id)} className="text-xs text-red-500 hover:text-red-700">Xóa</button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

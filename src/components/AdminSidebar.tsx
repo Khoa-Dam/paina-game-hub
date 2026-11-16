@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/games", label: "Quản lý game" },
   { href: "/admin/employees", label: "Quản lý nhân sự" },
+  { href: "/admin/departments", label: "Quản lý phòng ban" },
   { href: "/admin/results", label: "Kết quả" },
   { href: "/admin/leaderboard", label: "Bảng xếp hạng" },
   { href: "/admin/reports", label: "Báo cáo" },

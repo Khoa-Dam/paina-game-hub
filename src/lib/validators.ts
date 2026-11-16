@@ -3,6 +3,7 @@ import { z } from "zod";
 export const employeeLoginSchema = z.object({
   employeeCode: z.string().trim().min(1).max(50),
   fullName: z.string().trim().min(1).max(200),
+  departmentId: z.string().trim().min(1).optional(),
 });
 
 export const adminLoginSchema = z.object({
@@ -14,8 +15,12 @@ export const employeeUpsertSchema = z.object({
   employeeCode: z.string().trim().min(1).max(50),
   fullName: z.string().trim().min(1).max(200),
   email: z.string().trim().email().optional().or(z.literal("")),
-  department: z.string().trim().max(100).optional().or(z.literal("")),
+  departmentId: z.string().trim().min(1).optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+});
+
+export const employeeCreateSchema = employeeUpsertSchema.extend({
+  departmentId: z.string().trim().min(1),
 });
 
 // One schema per game type — each type stores its answer differently in

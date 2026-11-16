@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { sign, verify } from "./token";
 import { prisma } from "./prisma";
+import { departmentName } from "./employeeDepartment";
 
 const EMPLOYEE_COOKIE = "paina_session";
 const ADMIN_COOKIE = "paina_admin_session";
@@ -43,9 +44,12 @@ export async function getCurrentEmployee() {
   const token = (await cookies()).get(EMPLOYEE_COOKIE)?.value;
   const payload = verify<EmployeePayload>(token);
   if (!payload) return null;
-  const employee = await prisma.employee.findUnique({ where: { id: payload.employeeId } });
+  const employee = await prisma.employee.findUnique({
+    where: { id: payload.employeeId },
+    include: { departmentInfo: { select: { name: true } } },
+  });
   if (!employee || employee.status !== "ACTIVE") return null;
-  return employee;
+  return { ...employee, department: departmentName(employee) };
 }
 
 export async function getCurrentAdmin() {

@@ -12,11 +12,26 @@ export async function GET(req: NextRequest) {
     where: gameId ? { gameId } : undefined,
     orderBy: { playedAt: "desc" },
     include: {
-      employee: { select: { fullName: true, employeeCode: true, department: true } },
+      employee: {
+        select: {
+          fullName: true,
+          employeeCode: true,
+          legacyDepartment: true,
+          departmentInfo: { select: { name: true } },
+        },
+      },
       game: { select: { title: true } },
     },
     take: 500,
   });
 
-  return NextResponse.json({ results });
+  return NextResponse.json({
+    results: results.map((result) => ({
+      ...result,
+      employee: {
+        ...result.employee,
+        department: result.employee.departmentInfo?.name ?? result.employee.legacyDepartment,
+      },
+    })),
+  });
 }

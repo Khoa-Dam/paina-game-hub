@@ -16,15 +16,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   const data = parsed.data;
 
+  if (data.departmentId) {
+    const [department, currentEmployee] = await Promise.all([
+      prisma.department.findUnique({
+        where: { id: data.departmentId },
+        select: { id: true, isActive: true },
+      }),
+      prisma.employee.findUnique({ where: { id }, select: { departmentId: true } }),
+    ]);
+    if (!department || (!department.isActive && currentEmployee?.departmentId !== department.id)) {
+      return NextResponse.json({ error: "Phòng ban không hợp lệ hoặc đã ngừng hoạt động." }, { status: 400 });
+    }
+  }
+
   const employee = await prisma.employee.update({
     where: { id },
     data: {
       ...(data.employeeCode !== undefined ? { employeeCode: data.employeeCode } : {}),
       ...(data.fullName !== undefined ? { fullName: data.fullName } : {}),
       ...(data.email !== undefined ? { email: data.email || null } : {}),
-      ...(data.department !== undefined ? { department: data.department || null } : {}),
+      ...(data.departmentId !== undefined ? { departmentId: data.departmentId } : {}),
+      ...(data.departmentId !== undefined && data.departmentId !== null ? { legacyDepartment: null } : {}),
       ...(data.status !== undefined ? { status: data.status } : {}),
     },
+    include: { departmentInfo: true },
   });
 
   await logAdminAction({

@@ -20,7 +20,11 @@ export async function getLeaderboard(params: {
     const results = await prisma.gameResult.findMany({
       where: { gameId },
       orderBy: [{ totalScore: "desc" }, { completionTimeSeconds: "asc" }],
-      include: { employee: { select: { fullName: true, department: true } } },
+      include: {
+        employee: {
+          select: { fullName: true, legacyDepartment: true, departmentInfo: { select: { name: true } } },
+        },
+      },
       take: 100,
     });
     return {
@@ -28,7 +32,7 @@ export async function getLeaderboard(params: {
       entries: results.map((r, i) => ({
         rank: i + 1,
         displayName: r.employee.fullName,
-        department: r.employee.department,
+        department: r.employee.departmentInfo?.name ?? r.employee.legacyDepartment,
         score: r.totalScore,
         completionTimeSeconds: r.completionTimeSeconds,
       })),
@@ -54,7 +58,12 @@ export async function getLeaderboard(params: {
     const employeeIds = grouped.map((g) => g.employeeId);
     const employees = await prisma.employee.findMany({
       where: { id: { in: employeeIds } },
-      select: { id: true, fullName: true, department: true },
+      select: {
+        id: true,
+        fullName: true,
+        legacyDepartment: true,
+        departmentInfo: { select: { name: true } },
+      },
     });
     const empMap = new Map(employees.map((e) => [e.id, e]));
 
@@ -66,7 +75,7 @@ export async function getLeaderboard(params: {
       .map((e, i) => ({
         rank: i + 1,
         displayName: e.employee!.fullName,
-        department: e.employee!.department,
+        department: e.employee!.departmentInfo?.name ?? e.employee!.legacyDepartment,
         score: e.score,
       }));
 
@@ -75,8 +84,16 @@ export async function getLeaderboard(params: {
 
   if (scope === "department") {
     const grouped = await prisma.gameResult.groupBy({ by: ["employeeId"], _sum: { totalScore: true } });
-    const employees = await prisma.employee.findMany({ select: { id: true, department: true } });
-    const deptMap = new Map(employees.map((e) => [e.id, e.department || "Chưa phân loại"]));
+    const employees = await prisma.employee.findMany({
+      select: {
+        id: true,
+        legacyDepartment: true,
+        departmentInfo: { select: { name: true } },
+      },
+    });
+    const deptMap = new Map(
+      employees.map((e) => [e.id, e.departmentInfo?.name ?? e.legacyDepartment ?? "Chưa phân loại"])
+    );
 
     const byDept = new Map<string, number>();
     for (const g of grouped) {
