@@ -10,9 +10,24 @@ export async function GET() {
 
   const employees = await prisma.employee.findMany({
     orderBy: { createdAt: "desc" },
-    include: { departmentInfo: true },
+    select: {
+      id: true,
+      employeeCode: true,
+      fullName: true,
+      email: true,
+      departmentId: true,
+      legacyDepartment: true,
+      status: true,
+      departmentInfo: true,
+      passwordHash: true,
+    },
   });
-  return NextResponse.json({ employees });
+  return NextResponse.json({
+    employees: employees.map(({ passwordHash, ...employee }) => ({
+      ...employee,
+      hasPassword: Boolean(passwordHash),
+    })),
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -22,13 +37,21 @@ export async function POST(req: NextRequest) {
   const json = await req.json().catch(() => null);
   const parsed = employeeCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
   const data = parsed.data;
 
-  const existing = await prisma.employee.findUnique({ where: { employeeCode: data.employeeCode } });
+  const existing = await prisma.employee.findUnique({
+    where: { employeeCode: data.employeeCode },
+  });
   if (existing) {
-    return NextResponse.json({ error: "Mã nhân viên đã tồn tại." }, { status: 409 });
+    return NextResponse.json(
+      { error: "Mã nhân viên đã tồn tại." },
+      { status: 409 },
+    );
   }
 
   const department = await prisma.department.findFirst({
@@ -36,7 +59,10 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
   if (!department) {
-    return NextResponse.json({ error: "Phòng ban không hợp lệ hoặc đã ngừng hoạt động." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Phòng ban không hợp lệ hoặc đã ngừng hoạt động." },
+      { status: 400 },
+    );
   }
 
   const employee = await prisma.employee.create({
@@ -47,7 +73,16 @@ export async function POST(req: NextRequest) {
       departmentId: department.id,
       status: data.status,
     },
-    include: { departmentInfo: true },
+    select: {
+      id: true,
+      employeeCode: true,
+      fullName: true,
+      email: true,
+      departmentId: true,
+      legacyDepartment: true,
+      status: true,
+      departmentInfo: true,
+    },
   });
 
   await logAdminAction({

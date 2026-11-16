@@ -2,8 +2,22 @@ import { z } from "zod";
 
 export const employeeLoginSchema = z.object({
   employeeCode: z.string().trim().min(1).max(50),
+  password: z.string().min(1).max(200),
+});
+
+export const employeeCodeSchema = z.object({
+  employeeCode: z.string().trim().min(1).max(50),
+});
+export const employeeRegistrationSchema = z.object({
+  employeeCode: z.string().trim().min(1).max(50),
   fullName: z.string().trim().min(1).max(200),
-  departmentId: z.string().trim().min(1).optional(),
+  departmentId: z.string().trim().min(1),
+  password: z.string().min(1).max(200),
+  passwordConfirmation: z.string().min(1).max(200),
+});
+export const passwordSetupSchema = z.object({
+  password: z.string().min(1).max(200),
+  passwordConfirmation: z.string().min(1).max(200),
 });
 
 export const adminLoginSchema = z.object({
@@ -64,7 +78,10 @@ const wordPuzzleQuestionSchema = z.object({
     .string()
     .trim()
     .min(1)
-    .refine((v) => v.trim().split(/\s+/).length >= 2, "Cần ít nhất 2 từ để sắp xếp."),
+    .refine(
+      (v) => v.trim().split(/\s+/).length >= 2,
+      "Cần ít nhất 2 từ để sắp xếp.",
+    ),
 });
 
 export const questionInputSchema = z.discriminatedUnion("type", [
@@ -92,7 +109,9 @@ export const questionUpdateSchema = z.object({
 export const gameUpsertSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
-  type: z.enum(["QUIZ", "PICTURE_GUESSING", "TRUE_FALSE", "WORD_PUZZLE"]).default("QUIZ"),
+  type: z
+    .enum(["QUIZ", "PICTURE_GUESSING", "TRUE_FALSE", "WORD_PUZZLE"])
+    .default("QUIZ"),
   coverImageUrl: z.string().trim().optional().or(z.literal("")),
   instructions: z.string().trim().max(2000).optional().or(z.literal("")),
   startAt: z.string().optional().or(z.literal("")),

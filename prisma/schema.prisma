@@ -20,61 +20,76 @@ datasource db {
 // employee and never self-registerable. We still keep one row so we can
 // track login activity / hashed password without hardcoding secrets.
 model AdminAccount {
-  id           String   @id @default(cuid())
-  username     String   @unique
+  id           String    @id @default(cuid())
+  username     String    @unique
   passwordHash String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?
 }
 
 model Employee {
-  id            String         @id @default(cuid())
-  employeeCode  String         @unique
-  fullName      String
-  email         String?
-  departmentId  String?
+  id               String   @id @default(cuid())
+  employeeCode     String   @unique
+  fullName         String
+  email            String?
+  passwordHash     String?
+  departmentId     String?
   legacyDepartment String?
-  status        String         @default("ACTIVE")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  departmentInfo Department? @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
-  sessions GameSession[]
-  results  GameResult[]
+  departmentInfo Department?             @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
+  sessions       GameSession[]
+  results        GameResult[]
+  passwordSetups EmployeePasswordSetup[]
 
   @@index([departmentId])
 }
 
+model EmployeePasswordSetup {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  employeeId String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, expiresAt])
+}
+
 model Department {
-  id        String     @id @default(cuid())
-  code      String?    @unique
-  name      String     @unique
-  isActive  Boolean    @default(true)
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String   @id @default(cuid())
+  code      String?  @unique
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   employees Employee[] @relation("EmployeeDepartment")
 }
 
 model Game {
-  id                String     @id @default(cuid())
-  slug              String     @unique
+  id                String    @id @default(cuid())
+  slug              String    @unique
   title             String
   description       String?
-  type              String     @default("QUIZ")
+  type              String    @default("QUIZ")
   coverImageUrl     String?
   instructions      String?
-  status            String     @default("DRAFT")
+  status            String    @default("DRAFT")
   startAt           DateTime?
   endAt             DateTime?
-  durationSeconds   Int        @default(180)
-  maxPlaysPerUser   Int        @default(1)
-  pointsPerQuestion Int        @default(10)
-  speedBonusMax     Int        @default(0)
-  hintPenalty       Int        @default(0)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  durationSeconds   Int       @default(180)
+  maxPlaysPerUser   Int       @default(1)
+  pointsPerQuestion Int       @default(10)
+  speedBonusMax     Int       @default(0)
+  hintPenalty       Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   questions Question[]
   sessions  GameSession[]
@@ -82,18 +97,18 @@ model Game {
 }
 
 model Question {
-  id            String   @id @default(cuid())
-  gameId        String
-  order         Int
-  prompt        String
-  imageUrl      String?
+  id          String   @id @default(cuid())
+  gameId      String
+  order       Int
+  prompt      String
+  imageUrl    String?
   // JSON-encoded string[] of choice labels (Quiz / TrueFalse)
-  choicesJson   String
+  choicesJson String
   // JSON-encoded correct answer (never sent to the client before answering)
-  correctJson   String
-  hint          String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  correctJson String
+  hint        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   answers Answer[]
@@ -102,15 +117,15 @@ model Question {
 }
 
 model GameSession {
-  id          String        @id @default(cuid())
+  id          String    @id @default(cuid())
   gameId      String
   employeeId  String
-  status      String        @default("IN_PROGRESS")
-  startedAt   DateTime      @default(now())
+  status      String    @default("IN_PROGRESS")
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
 
-  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  game     Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   answers  Answer[]
   result   GameResult?
 
@@ -118,14 +133,14 @@ model GameSession {
 }
 
 model Answer {
-  id             String   @id @default(cuid())
-  sessionId      String
-  questionId     String
-  selectedJson   String
-  isCorrect      Boolean
-  pointsEarned   Int
-  usedHint       Boolean  @default(false)
-  answeredAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  sessionId    String
+  questionId   String
+  selectedJson String
+  isCorrect    Boolean
+  pointsEarned Int
+  usedHint     Boolean  @default(false)
+  answeredAt   DateTime @default(now())
 
   session  GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
