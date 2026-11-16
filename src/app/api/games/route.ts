@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployee } from "@/lib/guards";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function GET() {
+export const GET = withApiErrorHandling(async function GET() {
   const { employee, response } = await requireEmployee();
   if (!employee) return response;
 
@@ -40,4 +41,4 @@ export async function GET() {
       playsUsed: playedMap.get(g.id) ?? 0,
     })),
   });
-}
+});

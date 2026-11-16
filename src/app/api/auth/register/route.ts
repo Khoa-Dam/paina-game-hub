@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { setEmployeeSession } from "@/lib/session";
 import { employeeRegistrationSchema } from "@/lib/validators";
 import { employeePasswordError } from "@/lib/passwordPolicy";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function POST(req: NextRequest) {
+export const POST = withApiErrorHandling(async function POST(req: NextRequest) {
   const parsed = employeeRegistrationSchema.safeParse(
     await req.json().catch(() => null),
   );
@@ -82,4 +83,4 @@ export async function POST(req: NextRequest) {
     }
     throw error;
   }
-}
+});

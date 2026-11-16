@@ -1,6 +1,7 @@
 "use client";
 
 import Pineapple from "@/components/Pineapple";
+import TemporaryUnavailableNotice from "@/components/TemporaryUnavailableNotice";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "../constants";
 import { useEmployeeLogin } from "../hooks/useEmployeeLogin";
 
@@ -91,6 +92,12 @@ export default function EmployeeLoginForm() {
             <p className="text-sm font-medium text-pink-600" role="alert">
               {login.error}
             </p>
+          )}
+          {!login.accountState && login.statusCheckError && (
+            <TemporaryUnavailableNotice onRetry={login.retryStatusCheck} />
+          )}
+          {isRegistration && login.departmentLoadError && (
+            <TemporaryUnavailableNotice onRetry={login.retryDepartments} />
           )}
           <p className="text-center text-xs text-muted">
             Là Admin?{" "}

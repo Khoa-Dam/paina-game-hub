@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setEmployeeSession } from "@/lib/session";
 import { employeeLoginSchema } from "@/lib/validators";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function POST(req: NextRequest) {
+export const POST = withApiErrorHandling(async function POST(req: NextRequest) {
   const parsed = employeeLoginSchema.safeParse(
     await req.json().catch(() => null),
   );
@@ -38,4 +39,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     employee: { id: employee.id, fullName: employee.fullName },
   });
-}
+});

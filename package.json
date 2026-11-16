@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:load-test-users": "tsx prisma/scripts/prepare-local-load-users.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
