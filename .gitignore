@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env
+.env.local
+dev.db
+dev.db-journal
+public/uploads/*
+!public/uploads/.gitkeep
+
+.vercel
+.env*

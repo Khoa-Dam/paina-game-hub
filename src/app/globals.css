@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #fbfcef;
+  color: #171717;
+}
+
+/* Everything below must live in the components layer, not after
+   @tailwind utilities — otherwise a utility like bg-ink combined on the
+   same element as .card would lose to .card's own bg-surface, since both
+   have equal specificity and source order would decide the winner. */
+@layer components {
+  /* "Block" styling throughout borrows from Mario's UI blocks: a solid
+     black outline plus a hard (non-blurred) offset shadow that shifts
+     down on press, like a physical button rather than a flat rectangle. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-2xl border-2 border-ink bg-lime-300 px-6 py-2.5 font-body font-bold text-ink shadow-[0_4px_0_0_#171717] transition-all hover:-translate-y-0.5 hover:bg-lime-200 hover:shadow-[0_6px_0_0_#171717] active:translate-y-1 active:shadow-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border-2 border-ink bg-white px-6 py-2.5 font-body font-bold text-ink shadow-[0_4px_0_0_#171717] transition-all hover:-translate-y-0.5 hover:bg-lime-100 active:translate-y-1 active:shadow-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .card {
+    @apply rounded-3xl border-2 border-ink bg-surface p-5 shadow-[0_5px_0_0_#171717];
+  }
+
+  .input {
+    @apply w-full rounded-2xl border-2 border-border bg-white px-4 py-2.5 font-body text-ink outline-none transition focus:border-lime-500 focus:ring-4 focus:ring-lime-100;
+  }
+
+  .label {
+    @apply mb-1 block font-body text-sm font-medium text-muted;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full border-2 border-ink px-3 py-1 text-xs font-bold;
+  }
+
+  /* Signature brand mark: a tiny diamond chip in the real PAINA lime, wobbling on hover */
+  .brand-mark {
+    @apply inline-block h-3 w-3 rotate-45 rounded-[3px] border-2 border-ink bg-lime-300;
+  }
+  .brand-mark:hover {
+    animation: wobble 0.6s ease-in-out;
+  }
+
+  /* Leaderboard podium stickers: slightly rotated "stuck-on" medal look */
+  .sticker {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-2xl border-2 border-ink text-lg shadow-[0_3px_0_0_#171717];
+  }
+  .sticker-1 {
+    @apply -rotate-6 bg-gold-300;
+  }
+  .sticker-2 {
+    @apply rotate-3 bg-sky-200;
+  }
+  .sticker-3 {
+    @apply -rotate-3 bg-pink-200;
+  }
+
+  /* Soft decorative blobs used behind hero/login content */
+  .blob {
+    @apply pointer-events-none absolute rounded-full opacity-60 blur-3xl;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: -12px;
+    width: 8px;
+    height: 14px;
+    border-radius: 2px;
+    animation: confetti-fall 1.8s ease-in forwards;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(260px) rotate(280deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

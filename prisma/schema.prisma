@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Status/type fields below are plain String columns (carried over from an
+// earlier SQLite-compatible schema) with allowed values enforced in
+// lib/validators.ts (zod) rather than native Postgres enums.
+//   EmployeeStatus: ACTIVE | INACTIVE
+//   GameType: QUIZ | PICTURE_GUESSING | TRUE_FALSE | WORD_PUZZLE
+//   GameStatus: DRAFT | PUBLISHED | ACTIVE | CLOSED | ARCHIVED
+//   SessionStatus: IN_PROGRESS | COMPLETED | EXPIRED
+
+// Admin is a single, env-provisioned account — not stored as a normal
+// employee and never self-registerable. We still keep one row so we can
+// track login activity / hashed password without hardcoding secrets.
+model AdminAccount {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+}
+
+model Employee {
+  id            String         @id @default(cuid())
+  employeeCode  String         @unique
+  fullName      String
+  email         String?
+  department    String?
+  status        String         @default("ACTIVE")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  sessions GameSession[]
+  results  GameResult[]
+}
+
+model Game {
+  id                String     @id @default(cuid())
+  slug              String     @unique
+  title             String
+  description       String?
+  type              String     @default("QUIZ")
+  coverImageUrl     String?
+  instructions      String?
+  status            String     @default("DRAFT")
+  startAt           DateTime?
+  endAt             DateTime?
+  durationSeconds   Int        @default(180)
+  maxPlaysPerUser   Int        @default(1)
+  pointsPerQuestion Int        @default(10)
+  speedBonusMax     Int        @default(0)
+  hintPenalty       Int        @default(0)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  questions Question[]
+  sessions  GameSession[]
+  results   GameResult[]
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  gameId        String
+  order         Int
+  prompt        String
+  imageUrl      String?
+  // JSON-encoded string[] of choice labels (Quiz / TrueFalse)
+  choicesJson   String
+  // JSON-encoded correct answer (never sent to the client before answering)
+  correctJson   String
+  hint          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  answers Answer[]
+
+  @@index([gameId])
+}
+
+model GameSession {
+  id          String        @id @default(cuid())
+  gameId      String
+  employeeId  String
+  status      String        @default("IN_PROGRESS")
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+
+  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  answers  Answer[]
+  result   GameResult?
+
+  @@index([gameId, employeeId])
+}
+
+model Answer {
+  id             String   @id @default(cuid())
+  sessionId      String
+  questionId     String
+  selectedJson   String
+  isCorrect      Boolean
+  pointsEarned   Int
+  usedHint       Boolean  @default(false)
+  answeredAt     DateTime @default(now())
+
+  session  GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+}
+
+model GameResult {
+  id                    String   @id @default(cuid())
+  sessionId             String   @unique
+  gameId                String
+  employeeId            String
+  totalScore            Int
+  correctCount          Int
+  wrongCount            Int
+  completionTimeSeconds Int
+  playedAt              DateTime @default(now())
+
+  session  GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  game     Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@index([employeeId])
+  @@index([playedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      String
+  action     String
+  targetType String
+  targetId   String?
+  detail     String?
+  createdAt  DateTime @default(now())
+}

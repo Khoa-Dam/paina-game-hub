@@ -1,0 +1,778 @@
+{
+  "AdminAccount": [
+    {
+      "id": "cmwfxolps000057s40ca9xswc",
+      "username": "admin",
+      "passwordHash": "$2a$10$jB.gEymUqm91IsAdVf40c.XNWFRri4rTV544KzFpqQJQtQbg5m246",
+      "createdAt": "2026-11-14T04:56:52.720Z",
+      "lastLoginAt": "2026-11-16T03:48:58.161Z"
+    }
+  ],
+  "Employee": [
+    {
+      "id": "cmwfxom0a000157s4f2txxx7c",
+      "employeeCode": "NV0001",
+      "fullName": "Nguyễn Văn An",
+      "email": null,
+      "department": "Kinh doanh",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-14T04:56:53.098Z",
+      "updatedAt": "2026-11-14T04:56:53.098Z"
+    },
+    {
+      "id": "cmwfxoman000257s4kqjg1y94",
+      "employeeCode": "NV0002",
+      "fullName": "Trần Thị Bình",
+      "email": null,
+      "department": "Marketing",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-14T04:56:53.471Z",
+      "updatedAt": "2026-11-14T04:56:53.471Z"
+    },
+    {
+      "id": "cmwfxoml1000357s4wx1gze32",
+      "employeeCode": "NV0003",
+      "fullName": "Lê Hoàng Cường",
+      "email": null,
+      "department": "Kỹ thuật",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-14T04:56:53.846Z",
+      "updatedAt": "2026-11-14T04:56:53.846Z"
+    },
+    {
+      "id": "cmwfxomvf000457s49bdt8524",
+      "employeeCode": "NV0004",
+      "fullName": "Phạm Thị Dung",
+      "email": null,
+      "department": "Nhân sự",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-14T04:56:54.219Z",
+      "updatedAt": "2026-11-14T04:56:54.219Z"
+    },
+    {
+      "id": "cmwfxon5p000557s438yisgcg",
+      "employeeCode": "NV0005",
+      "fullName": "Hoàng Văn Em",
+      "email": null,
+      "department": "Kỹ thuật",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-14T04:56:54.589Z",
+      "updatedAt": "2026-11-14T04:56:54.589Z"
+    },
+    {
+      "id": "cmwip5ivh0000l3nubs7pnbob",
+      "employeeCode": "S-450",
+      "fullName": "Đỗ Thị Thu Thảo",
+      "email": null,
+      "department": null,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-16T03:21:24.173Z",
+      "updatedAt": "2026-11-16T03:21:24.173Z"
+    },
+    {
+      "id": "cmwiqasix0000jtrqxjjdrjyd",
+      "employeeCode": "S-383",
+      "fullName": "Đặng Thanh Hải",
+      "email": null,
+      "department": null,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-16T03:53:29.578Z",
+      "updatedAt": "2026-11-16T03:53:29.578Z"
+    }
+  ],
+  "Game": [
+    {
+      "id": "cmwfxonlt000657s4m6qr0lfa",
+      "slug": "kien-thuc-paina",
+      "title": "Kiến thức PAINA",
+      "description": "Trắc nghiệm nhanh kiểm tra hiểu biết về công ty.",
+      "type": "QUIZ",
+      "coverImageUrl": null,
+      "instructions": "Trả lời 5 câu hỏi trong 120 giây. Mỗi câu đúng được 10 điểm, trả lời nhanh có thêm điểm thưởng.",
+      "status": "ACTIVE",
+      "startAt": null,
+      "endAt": null,
+      "durationSeconds": 120,
+      "maxPlaysPerUser": 1,
+      "pointsPerQuestion": 10,
+      "speedBonusMax": 20,
+      "hintPenalty": 3,
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxoo20000c57s475blqe6q",
+      "slug": "dung-hay-sai",
+      "title": "Đúng hay Sai?",
+      "description": "Trả lời nhanh các phát biểu Đúng/Sai về PAINA GAME HUB.",
+      "type": "TRUE_FALSE",
+      "coverImageUrl": null,
+      "instructions": "Đọc kỹ từng câu và chọn Đúng hoặc Sai. 4 câu, 60 giây.",
+      "status": "ACTIVE",
+      "startAt": null,
+      "endAt": null,
+      "durationSeconds": 60,
+      "maxPlaysPerUser": 1,
+      "pointsPerQuestion": 10,
+      "speedBonusMax": 10,
+      "hintPenalty": 0,
+      "createdAt": "2026-11-14T04:56:55.752Z",
+      "updatedAt": "2026-11-14T04:56:55.752Z"
+    },
+    {
+      "id": "cmwfxooy3000l57s41cgaweny",
+      "slug": "sap-xep-tu",
+      "title": "Sắp xếp từ",
+      "description": "Chạm các từ đang xáo trộn theo đúng thứ tự để tạo thành câu đúng.",
+      "type": "WORD_PUZZLE",
+      "coverImageUrl": null,
+      "instructions": "Mỗi câu gồm vài từ bị xáo trộn. Chạm từng từ theo đúng thứ tự để ghép thành câu đúng.",
+      "status": "ACTIVE",
+      "startAt": null,
+      "endAt": null,
+      "durationSeconds": 90,
+      "maxPlaysPerUser": 1,
+      "pointsPerQuestion": 20,
+      "speedBonusMax": 0,
+      "hintPenalty": 0,
+      "createdAt": "2026-11-14T04:56:56.907Z",
+      "updatedAt": "2026-11-14T04:56:56.907Z"
+    },
+    {
+      "id": "cmwfxooi0000h57s4fsiyvrfk",
+      "slug": "duoi-hinh-bat-chu",
+      "title": "Đuổi hình bắt chữ",
+      "description": "Nhìn hình đoán từ — gõ đáp án của bạn.",
+      "type": "PICTURE_GUESSING",
+      "coverImageUrl": null,
+      "instructions": "Xem ảnh gợi ý và gõ từ bạn nghĩ là đáp án. Không phân biệt hoa/thường hay dấu.",
+      "status": "ACTIVE",
+      "startAt": null,
+      "endAt": null,
+      "durationSeconds": 90,
+      "maxPlaysPerUser": 1,
+      "pointsPerQuestion": 15,
+      "speedBonusMax": 0,
+      "hintPenalty": 5,
+      "createdAt": "2026-11-14T04:56:56.328Z",
+      "updatedAt": "2026-11-16T03:49:07.681Z"
+    }
+  ],
+  "Question": [
+    {
+      "id": "cmwfxonlt000757s4kr63njck",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "order": 1,
+      "prompt": "PAINA GAME HUB dùng để làm gì?",
+      "imageUrl": null,
+      "choicesJson": "[\"Chơi mini game nội bộ công ty\",\"Quản lý lương\",\"Đặt lịch họp\",\"Theo dõi KPI\"]",
+      "correctJson": "0",
+      "hint": "Chữ 'Game' trong tên đã gợi ý câu trả lời.",
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxonlt000857s44s6nw2e1",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "order": 2,
+      "prompt": "Ai có quyền tạo game mới trên hệ thống?",
+      "imageUrl": null,
+      "choicesJson": "[\"Bất kỳ nhân viên nào\",\"Chỉ Admin\",\"Trưởng phòng\",\"Không ai\"]",
+      "correctJson": "1",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxonlt000957s4dorxjpm9",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "order": 3,
+      "prompt": "Mỗi nhân viên được chơi một game bao nhiêu lần theo mặc định?",
+      "imageUrl": null,
+      "choicesJson": "[\"1 lần\",\"3 lần\",\"Không giới hạn\",\"5 lần\"]",
+      "correctJson": "0",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxonlt000a57s4qmpifa5t",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "order": 4,
+      "prompt": "Bảng xếp hạng hiển thị thông tin nào của bạn?",
+      "imageUrl": null,
+      "choicesJson": "[\"Mã nhân viên và email\",\"Họ tên, phòng ban, điểm và thứ hạng\",\"Số điện thoại\",\"Mật khẩu\"]",
+      "correctJson": "1",
+      "hint": "Hệ thống không công khai thông tin đăng nhập.",
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxonlt000b57s4nwvr2y2w",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "order": 5,
+      "prompt": "Điểm số của bạn được tính ở đâu?",
+      "imageUrl": null,
+      "choicesJson": "[\"Trên trình duyệt của bạn\",\"Trên máy chủ (backend)\",\"Không ai tính\",\"Do bạn tự nhập\"]",
+      "correctJson": "1",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.170Z",
+      "updatedAt": "2026-11-14T04:56:55.170Z"
+    },
+    {
+      "id": "cmwfxoo20000d57s4nqnrdxln",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "order": 1,
+      "prompt": "Nhân sự có thể tự nâng cấp tài khoản của mình thành Admin.",
+      "imageUrl": null,
+      "choicesJson": "[\"Đúng\",\"Sai\"]",
+      "correctJson": "1",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.752Z",
+      "updatedAt": "2026-11-14T04:56:55.752Z"
+    },
+    {
+      "id": "cmwfxoo20000e57s47oiwp6ue",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "order": 2,
+      "prompt": "Mỗi game có thể giới hạn số lượt chơi tối đa cho mỗi người.",
+      "imageUrl": null,
+      "choicesJson": "[\"Đúng\",\"Sai\"]",
+      "correctJson": "0",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.752Z",
+      "updatedAt": "2026-11-14T04:56:55.752Z"
+    },
+    {
+      "id": "cmwfxoo20000f57s406wtl15v",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "order": 3,
+      "prompt": "Đáp án đúng được gửi về trình duyệt trước khi bạn trả lời.",
+      "imageUrl": null,
+      "choicesJson": "[\"Đúng\",\"Sai\"]",
+      "correctJson": "1",
+      "hint": "Nếu vậy thì ai cũng gian lận được.",
+      "createdAt": "2026-11-14T04:56:55.752Z",
+      "updatedAt": "2026-11-14T04:56:55.752Z"
+    },
+    {
+      "id": "cmwfxoo20000g57s4bheq0vlr",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "order": 4,
+      "prompt": "Bảng xếp hạng có thể lọc theo phòng ban.",
+      "imageUrl": null,
+      "choicesJson": "[\"Đúng\",\"Sai\"]",
+      "correctJson": "0",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:55.752Z",
+      "updatedAt": "2026-11-14T04:56:55.752Z"
+    },
+    {
+      "id": "cmwfxooi0000i57s4w4vonxth",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "order": 1,
+      "prompt": "Đây là từ/cụm từ gì?",
+      "imageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRTNFQTc4Ii8+CiAgICA8dGV4dCB4PSIyMDAiIHk9IjE3NSIgZm9udC1zaXplPSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfjY08L3RleHQ+CiAgPC9zdmc+",
+      "choicesJson": "[]",
+      "correctJson": "\"quả dứa\"",
+      "hint": "Biểu tượng của PAINA.",
+      "createdAt": "2026-11-14T04:56:56.328Z",
+      "updatedAt": "2026-11-14T04:56:56.328Z"
+    },
+    {
+      "id": "cmwfxooi0000j57s4na1mhs5o",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "order": 2,
+      "prompt": "Đây là từ/cụm từ gì?",
+      "imageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRTNFQTc4Ii8+CiAgICA8dGV4dCB4PSIyMDAiIHk9IjE3NSIgZm9udC1zaXplPSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfj4Y8L3RleHQ+CiAgPC9zdmc+",
+      "choicesJson": "[]",
+      "correctJson": "\"chiến thắng\"",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:56.328Z",
+      "updatedAt": "2026-11-14T04:56:56.328Z"
+    },
+    {
+      "id": "cmwfxooi0000k57s46akod38i",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "order": 3,
+      "prompt": "Đây là từ/cụm từ gì?",
+      "imageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRTNFQTc4Ii8+CiAgICA8dGV4dCB4PSIyMDAiIHk9IjE3NSIgZm9udC1zaXplPSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfko48L3RleHQ+CiAgPC9zdmc+",
+      "choicesJson": "[]",
+      "correctJson": "\"kim cương\"",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:56.328Z",
+      "updatedAt": "2026-11-14T04:56:56.328Z"
+    },
+    {
+      "id": "cmwfxooy3000m57s46jbxda2n",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "order": 1,
+      "prompt": "Sắp xếp thành câu đúng",
+      "imageUrl": null,
+      "choicesJson": "[]",
+      "correctJson": "[\"chất\",\"lượng\",\"tạo\",\"nên\",\"thương\",\"hiệu\"]",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:56.907Z",
+      "updatedAt": "2026-11-14T04:56:56.907Z"
+    },
+    {
+      "id": "cmwfxooy3000n57s4n909kwk8",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "order": 2,
+      "prompt": "Sắp xếp thành câu đúng",
+      "imageUrl": null,
+      "choicesJson": "[]",
+      "correctJson": "[\"đoàn\",\"kết\",\"là\",\"sức\",\"mạnh\"]",
+      "hint": null,
+      "createdAt": "2026-11-14T04:56:56.907Z",
+      "updatedAt": "2026-11-14T04:56:56.907Z"
+    }
+  ],
+  "GameSession": [
+    {
+      "id": "cmwg6ybj20001b43nnxhb33g2",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-14T09:16:22.622Z",
+      "completedAt": "2026-11-14T09:17:44.837Z"
+    },
+    {
+      "id": "cmwg7an89000gb43ncz9ydmcq",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-14T09:25:57.658Z",
+      "completedAt": "2026-11-14T09:26:44.520Z"
+    },
+    {
+      "id": "cmwg7yh450001w7d37u3p86h1",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-14T09:44:29.478Z",
+      "completedAt": "2026-11-14T09:45:17.397Z"
+    },
+    {
+      "id": "cmwgkqif5000111tmv0ltihtb",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-14T15:42:12.929Z",
+      "completedAt": "2026-11-14T15:43:06.169Z"
+    },
+    {
+      "id": "cmwiqb7gk0002jtrqkqjf37wm",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-16T03:53:48.932Z",
+      "completedAt": "2026-11-16T03:54:12.819Z"
+    },
+    {
+      "id": "cmwiqbyjq000bjtrqypq8enyu",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-16T03:54:24.038Z",
+      "completedAt": "2026-11-16T03:54:52.101Z"
+    },
+    {
+      "id": "cmwiqcycf000mjtrql67z9yl2",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-16T03:55:10.431Z",
+      "completedAt": "2026-11-16T03:55:42.544Z"
+    },
+    {
+      "id": "cmwiqdr7n00013fnhq2at8vdw",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "status": "COMPLETED",
+      "startedAt": "2026-11-16T03:55:47.844Z",
+      "completedAt": "2026-11-16T03:56:22.390Z"
+    }
+  ],
+  "Answer": [
+    {
+      "id": "cmwg6ypeh0003b43nqe2420zt",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "questionId": "cmwfxonlt000757s4kr63njck",
+      "selectedJson": "0",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:16:40.601Z"
+    },
+    {
+      "id": "cmwg6z0v40005b43nj3ff6ctt",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "questionId": "cmwfxonlt000857s44s6nw2e1",
+      "selectedJson": "1",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:16:55.456Z"
+    },
+    {
+      "id": "cmwg6z98r0007b43nu18amgli",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "questionId": "cmwfxonlt000957s4dorxjpm9",
+      "selectedJson": "0",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:17:06.315Z"
+    },
+    {
+      "id": "cmwg6zkz90009b43n2oj8swc7",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "questionId": "cmwfxonlt000a57s4qmpifa5t",
+      "selectedJson": "0",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:17:21.525Z"
+    },
+    {
+      "id": "cmwg6zxqg000bb43ngelkh1ni",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "questionId": "cmwfxonlt000b57s4nwvr2y2w",
+      "selectedJson": "0",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:17:38.056Z"
+    },
+    {
+      "id": "cmwg7b0sv000ib43n1l05oq66",
+      "sessionId": "cmwg7an89000gb43ncz9ydmcq",
+      "questionId": "cmwfxoo20000d57s4nqnrdxln",
+      "selectedJson": "0",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:26:15.248Z"
+    },
+    {
+      "id": "cmwg7bjqr000kb43n9bkxcqpk",
+      "sessionId": "cmwg7an89000gb43ncz9ydmcq",
+      "questionId": "cmwfxoo20000e57s47oiwp6ue",
+      "selectedJson": "0",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:26:39.795Z"
+    },
+    {
+      "id": "cmwg7ysu00003w7d33zvf33lz",
+      "sessionId": "cmwg7yh450001w7d37u3p86h1",
+      "questionId": "cmwfxooy3000m57s46jbxda2n",
+      "selectedJson": "[\"chất\",\"lượng\",\"tạo\",\"nên\",\"thương\",\"hiệu\"]",
+      "isCorrect": true,
+      "pointsEarned": 20,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:44:44.664Z"
+    },
+    {
+      "id": "cmwg7z04y0005w7d3719s1g0s",
+      "sessionId": "cmwg7yh450001w7d37u3p86h1",
+      "questionId": "cmwfxooy3000n57s4n909kwk8",
+      "selectedJson": "[\"đoàn\",\"kết\",\"là\",\"sức\",\"mạnh\"]",
+      "isCorrect": true,
+      "pointsEarned": 20,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T09:44:54.130Z"
+    },
+    {
+      "id": "cmwgkr4l9000311tm46tep5p4",
+      "sessionId": "cmwgkqif5000111tmv0ltihtb",
+      "questionId": "cmwfxooi0000i57s4w4vonxth",
+      "selectedJson": "\"quả dứa\"",
+      "isCorrect": true,
+      "pointsEarned": 15,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T15:42:41.661Z"
+    },
+    {
+      "id": "cmwgkrcvf000511tm3gh17uts",
+      "sessionId": "cmwgkqif5000111tmv0ltihtb",
+      "questionId": "cmwfxooi0000j57s4na1mhs5o",
+      "selectedJson": "\"cúp\"",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T15:42:52.396Z"
+    },
+    {
+      "id": "cmwgkrltj000711tmia24mito",
+      "sessionId": "cmwgkqif5000111tmv0ltihtb",
+      "questionId": "cmwfxooi0000k57s46akod38i",
+      "selectedJson": "\"đá quý\"",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-14T15:43:03.991Z"
+    },
+    {
+      "id": "cmwiqbiq50004jtrqxskeo0g8",
+      "sessionId": "cmwiqb7gk0002jtrqkqjf37wm",
+      "questionId": "cmwfxooy3000m57s46jbxda2n",
+      "selectedJson": "[\"chất\",\"lượng\",\"tạo\",\"nên\",\"thương\",\"hiệu\"]",
+      "isCorrect": true,
+      "pointsEarned": 20,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:54:03.534Z"
+    },
+    {
+      "id": "cmwiqbou20006jtrqbwhxnr5m",
+      "sessionId": "cmwiqb7gk0002jtrqkqjf37wm",
+      "questionId": "cmwfxooy3000n57s4n909kwk8",
+      "selectedJson": "[\"đoàn\",\"kết\",\"là\",\"sức\",\"mạnh\"]",
+      "isCorrect": true,
+      "pointsEarned": 20,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:54:11.450Z"
+    },
+    {
+      "id": "cmwiqc69p000djtrq0a4mcxfw",
+      "sessionId": "cmwiqbyjq000bjtrqypq8enyu",
+      "questionId": "cmwfxooi0000i57s4w4vonxth",
+      "selectedJson": "\"Quả Dứa\"",
+      "isCorrect": true,
+      "pointsEarned": 15,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:54:34.046Z"
+    },
+    {
+      "id": "cmwiqcbnn000fjtrqbyy9qpbb",
+      "sessionId": "cmwiqbyjq000bjtrqypq8enyu",
+      "questionId": "cmwfxooi0000j57s4na1mhs5o",
+      "selectedJson": "\"Cúp\"",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:54:41.027Z"
+    },
+    {
+      "id": "cmwiqcj8m000hjtrqeaxrdng7",
+      "sessionId": "cmwiqbyjq000bjtrqypq8enyu",
+      "questionId": "cmwfxooi0000k57s46akod38i",
+      "selectedJson": "\"Kim Cương\"",
+      "isCorrect": true,
+      "pointsEarned": 15,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:54:50.855Z"
+    },
+    {
+      "id": "cmwiqd2cq000ojtrq2ub8dxu5",
+      "sessionId": "cmwiqcycf000mjtrql67z9yl2",
+      "questionId": "cmwfxoo20000d57s4nqnrdxln",
+      "selectedJson": "1",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:15.626Z"
+    },
+    {
+      "id": "cmwiqd8aw000qjtrqb3lxnrka",
+      "sessionId": "cmwiqcycf000mjtrql67z9yl2",
+      "questionId": "cmwfxoo20000e57s47oiwp6ue",
+      "selectedJson": "1",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:23.336Z"
+    },
+    {
+      "id": "cmwiqdibw000sjtrqkt5k1jqr",
+      "sessionId": "cmwiqcycf000mjtrql67z9yl2",
+      "questionId": "cmwfxoo20000f57s406wtl15v",
+      "selectedJson": "0",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:36.332Z"
+    },
+    {
+      "id": "cmwiqdmjf000ujtrq74522nbx",
+      "sessionId": "cmwiqcycf000mjtrql67z9yl2",
+      "questionId": "cmwfxoo20000g57s4bheq0vlr",
+      "selectedJson": "0",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:41.787Z"
+    },
+    {
+      "id": "cmwiqdven00033fnhuwcz57wh",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "questionId": "cmwfxonlt000757s4kr63njck",
+      "selectedJson": "0",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:53.279Z"
+    },
+    {
+      "id": "cmwiqdzmz00053fnh8ohq53zr",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "questionId": "cmwfxonlt000857s44s6nw2e1",
+      "selectedJson": "1",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:55:58.763Z"
+    },
+    {
+      "id": "cmwiqe3ul00073fnhgtt80o7j",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "questionId": "cmwfxonlt000957s4dorxjpm9",
+      "selectedJson": "2",
+      "isCorrect": false,
+      "pointsEarned": 0,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:56:04.222Z"
+    },
+    {
+      "id": "cmwiqebp200093fnhrkfnzxue",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "questionId": "cmwfxonlt000a57s4qmpifa5t",
+      "selectedJson": "1",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:56:14.390Z"
+    },
+    {
+      "id": "cmwiqehbi000b3fnhkicnio16",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "questionId": "cmwfxonlt000b57s4nwvr2y2w",
+      "selectedJson": "1",
+      "isCorrect": true,
+      "pointsEarned": 10,
+      "usedHint": false,
+      "answeredAt": "2026-11-16T03:56:21.679Z"
+    }
+  ],
+  "GameResult": [
+    {
+      "id": "cmwg703bw000eb43nx0u22dt5",
+      "sessionId": "cmwg6ybj20001b43nnxhb33g2",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "totalScore": 36,
+      "correctCount": 3,
+      "wrongCount": 2,
+      "completionTimeSeconds": 82,
+      "playedAt": "2026-11-14T09:17:45.309Z"
+    },
+    {
+      "id": "cmwg7bnqr000nb43n8dtib6hd",
+      "sessionId": "cmwg7an89000gb43ncz9ydmcq",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "totalScore": 12,
+      "correctCount": 1,
+      "wrongCount": 1,
+      "completionTimeSeconds": 46,
+      "playedAt": "2026-11-14T09:26:44.980Z"
+    },
+    {
+      "id": "cmwg7zi3h0008w7d30arhxsc6",
+      "sessionId": "cmwg7yh450001w7d37u3p86h1",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "totalScore": 40,
+      "correctCount": 2,
+      "wrongCount": 0,
+      "completionTimeSeconds": 48,
+      "playedAt": "2026-11-14T09:45:17.405Z"
+    },
+    {
+      "id": "cmwgkrnih000a11tm9skwdu58",
+      "sessionId": "cmwgkqif5000111tmv0ltihtb",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "employeeId": "cmwfxoman000257s4kqjg1y94",
+      "totalScore": 15,
+      "correctCount": 1,
+      "wrongCount": 2,
+      "completionTimeSeconds": 53,
+      "playedAt": "2026-11-14T15:43:06.185Z"
+    },
+    {
+      "id": "cmwiqbpw80009jtrq3vqlwf5i",
+      "sessionId": "cmwiqb7gk0002jtrqkqjf37wm",
+      "gameId": "cmwfxooy3000l57s41cgaweny",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "totalScore": 40,
+      "correctCount": 2,
+      "wrongCount": 0,
+      "completionTimeSeconds": 24,
+      "playedAt": "2026-11-16T03:54:12.825Z"
+    },
+    {
+      "id": "cmwiqck7f000kjtrqw634dpmp",
+      "sessionId": "cmwiqbyjq000bjtrqypq8enyu",
+      "gameId": "cmwfxooi0000h57s4fsiyvrfk",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "totalScore": 30,
+      "correctCount": 2,
+      "wrongCount": 1,
+      "completionTimeSeconds": 28,
+      "playedAt": "2026-11-16T03:54:52.107Z"
+    },
+    {
+      "id": "cmwiqdn4n000xjtrq9vav5n5w",
+      "sessionId": "cmwiqcycf000mjtrql67z9yl2",
+      "gameId": "cmwfxoo20000c57s475blqe6q",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "totalScore": 25,
+      "correctCount": 2,
+      "wrongCount": 2,
+      "completionTimeSeconds": 32,
+      "playedAt": "2026-11-16T03:55:42.552Z"
+    },
+    {
+      "id": "cmwiqehvi000e3fnh1uqg3jbz",
+      "sessionId": "cmwiqdr7n00013fnhq2at8vdw",
+      "gameId": "cmwfxonlt000657s4m6qr0lfa",
+      "employeeId": "cmwiqasix0000jtrqxjjdrjyd",
+      "totalScore": 54,
+      "correctCount": 4,
+      "wrongCount": 1,
+      "completionTimeSeconds": 35,
+      "playedAt": "2026-11-16T03:56:22.398Z"
+    }
+  ],
+  "AuditLog": [
+    {
+      "id": "cmwiob2ul0000gh1mdbphphy3",
+      "actor": "admin",
+      "action": "DELETE_EMPLOYEE",
+      "targetType": "Employee",
+      "targetId": "cmwioasvf0000y4xqmlgo1hbg",
+      "detail": null,
+      "createdAt": "2026-11-16T02:57:43.726Z"
+    },
+    {
+      "id": "cmwip9w250001l3nubfhgefn2",
+      "actor": "admin",
+      "action": "CHANGE_GAME_STATUS",
+      "targetType": "Game",
+      "targetId": "cmwfxooi0000h57s4fsiyvrfk",
+      "detail": "{\"from\":\"ACTIVE\",\"to\":\"CLOSED\"}",
+      "createdAt": "2026-11-16T03:24:47.885Z"
+    },
+    {
+      "id": "cmwiq56gg0000gmalhwerogmp",
+      "actor": "admin",
+      "action": "CHANGE_GAME_STATUS",
+      "targetType": "Game",
+      "targetId": "cmwfxooi0000h57s4fsiyvrfk",
+      "detail": "{\"from\":\"CLOSED\",\"to\":\"ACTIVE\"}",
+      "createdAt": "2026-11-16T03:49:07.696Z"
+    }
+  ]
+}
