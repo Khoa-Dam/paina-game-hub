@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/guards";
@@ -16,10 +17,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!source) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const title = `${source.title} (Copy)`;
-  let slug = slugify(title);
-  if (await prisma.game.findUnique({ where: { slug } })) {
-    slug = `${slug}-${Date.now().toString(36)}`;
-  }
+  // A timestamp suffix can collide when the base slug already exists and
+  // duplicate requests happen within the same millisecond. Use a random
+  // suffix so concurrent copies receive distinct unique slugs.
+  const slug = `${slugify(title)}-${randomUUID()}`;
 
   const copy = await prisma.game.create({
     data: {
