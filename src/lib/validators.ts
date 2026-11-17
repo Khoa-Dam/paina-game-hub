@@ -106,12 +106,17 @@ export const questionUpdateSchema = z.object({
   correctPhrase: z.string().trim().min(1).optional(),
 });
 
+const gameTypeSchema = z.enum([
+  "QUIZ",
+  "PICTURE_GUESSING",
+  "TRUE_FALSE",
+  "WORD_PUZZLE",
+]);
+
 export const gameUpsertSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
-  type: z
-    .enum(["QUIZ", "PICTURE_GUESSING", "TRUE_FALSE", "WORD_PUZZLE"])
-    .default("QUIZ"),
+  type: gameTypeSchema.default("QUIZ"),
   coverImageUrl: z.string().trim().optional().or(z.literal("")),
   instructions: z.string().trim().max(2000).optional().or(z.literal("")),
   startAt: z.string().optional().or(z.literal("")),
@@ -122,6 +127,12 @@ export const gameUpsertSchema = z.object({
   speedBonusMax: z.number().int().min(0).max(1000),
   hintPenalty: z.number().int().min(0).max(1000),
 });
+
+// PATCH must never inherit the create-time QUIZ default when type is omitted.
+export const gameUpdateSchema = gameUpsertSchema
+  .omit({ type: true })
+  .extend({ type: gameTypeSchema.optional() })
+  .partial();
 
 export const gameStatusSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "ACTIVE", "CLOSED", "ARCHIVED"]),

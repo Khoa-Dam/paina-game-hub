@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -43,12 +43,14 @@ export default function AdminGameDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  function load() {
-    fetch(`/api/admin/games/${id}`)
-      .then((r) => r.json())
-      .then((d) => setGame(d.game));
-  }
-  useEffect(load, [id]);
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/admin/games/${id}`);
+    const data = await res.json();
+    if (res.ok) setGame(data.game);
+  }, [id]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function saveSettings(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +63,7 @@ export default function AdminGameDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: game.title,
+          type: game.type,
           description: game.description || "",
           instructions: game.instructions || "",
           coverImageUrl: game.coverImageUrl || "",
@@ -71,7 +74,13 @@ export default function AdminGameDetailPage() {
           hintPenalty: game.hintPenalty,
         }),
       });
-      if (res.ok) setMessage("Đã lưu cấu hình game.");
+      if (res.ok) {
+        await load();
+        setMessage("Đã lưu cấu hình game.");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMessage(data.error || "Không thể lưu cấu hình game.");
+      }
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/guards";
-import { gameUpsertSchema } from "@/lib/validators";
+import { gameUpdateSchema } from "@/lib/validators";
 import { logAdminAction } from "@/lib/auditLog";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
 
   const json = await req.json().catch(() => null);
-  const parsed = gameUpsertSchema.partial().safeParse(json);
+  const parsed = gameUpdateSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

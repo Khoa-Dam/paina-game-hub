@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:audit-game-types": "tsx scripts/audit-game-types.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
