@@ -37,11 +37,31 @@ const TYPE_LABELS: Record<string, string> = {
   WORD_PUZZLE: "Sắp xếp từ",
 };
 
+async function readUploadedImageUrl(response: Response): Promise<string> {
+  const data = (await response.json().catch(() => null)) as
+    | { url?: unknown; error?: unknown }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof data?.error === "string"
+        ? data.error
+        : `Tải ảnh lên thất bại (HTTP ${response.status}).`,
+    );
+  }
+  if (typeof data?.url !== "string" || !data.url) {
+    throw new Error("Máy chủ không trả về đường dẫn ảnh hợp lệ.");
+  }
+
+  return data.url;
+}
+
 export default function AdminGameDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [game, setGame] = useState<Game | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/games/${id}`);
@@ -89,9 +109,21 @@ export default function AdminGameDetailPage() {
   async function uploadCover(file: File) {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-    const d = await res.json();
-    if (res.ok && game) setGame({ ...game, coverImageUrl: d.url });
+    setUploadingCover(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      const url = await readUploadedImageUrl(res);
+      setGame((current) =>
+        current ? { ...current, coverImageUrl: url } : current,
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Tải ảnh lên thất bại.",
+      );
+    } finally {
+      setUploadingCover(false);
+    }
   }
 
   if (!game) return <p className="text-muted">Đang tải...</p>;
@@ -136,9 +168,15 @@ export default function AdminGameDetailPage() {
           )}
           <input
             type="file"
-            accept="image/*"
-            onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])}
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            disabled={uploadingCover}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void uploadCover(file);
+            }}
           />
+          {uploadingCover && <p className="mt-1 text-sm text-muted">Đang tải ảnh lên...</p>}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <NumberField
@@ -266,13 +304,26 @@ function QuestionsEditor({
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   async function uploadQuestionImage(file: File) {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-    const d = await res.json();
-    if (res.ok) setImageUrl(d.url);
+    setError(null);
+    setImageUrl("");
+    setUploadingImage(true);
+    try {
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      setImageUrl(await readUploadedImageUrl(res));
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Tải ảnh gợi ý lên thất bại.",
+      );
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   function resetForm() {
@@ -329,13 +380,21 @@ function QuestionsEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => null)) as
+        | { error?: unknown }
+        | null;
       if (!res.ok) {
-        setError(JSON.stringify(data.error));
+        setError(
+          typeof data?.error === "string"
+            ? data.error
+            : `Thêm câu hỏi thất bại (HTTP ${res.status}).`,
+        );
         return;
       }
       resetForm();
       onChanged();
+    } catch {
+      setError("Không thể kết nối máy chủ để thêm câu hỏi. Vui lòng thử lại.");
     } finally {
       setAdding(false);
     }
@@ -407,9 +466,15 @@ function QuestionsEditor({
             )}
             <input
               type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files?.[0] && uploadQuestionImage(e.target.files[0])}
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              disabled={uploadingImage}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void uploadQuestionImage(file);
+              }}
             />
+            {uploadingImage && <p className="mt-1 text-sm text-muted">Đang tải ảnh gợi ý lên...</p>}
           </div>
         )}
 
@@ -482,8 +547,8 @@ function QuestionsEditor({
           <input className="input" value={hint} onChange={(e) => setHint(e.target.value)} />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="submit" disabled={adding} className="btn-secondary">
-          {adding ? "Đang thêm..." : "+ Thêm câu hỏi"}
+        <button type="submit" disabled={adding || uploadingImage} className="btn-secondary">
+          {uploadingImage ? "Đang tải ảnh..." : adding ? "Đang thêm..." : "+ Thêm câu hỏi"}
         </button>
       </form>
     </div>

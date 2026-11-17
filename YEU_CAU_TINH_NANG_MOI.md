@@ -37,9 +37,11 @@ Ngoài 8 phòng trên, sơ đồ còn có Ban Giám đốc, Dự án Xây dựng
 
 **Yêu cầu kỹ thuật:**
 
-- [ ] Thêm màn "Quản lý phòng ban" trong Admin để tự thêm/sửa/xóa tên phòng ban — **không hardcode cứng trong code**, vì sơ đồ tổ chức có thể thay đổi (file nguồn đang có hẳn mục "Điều chỉnh vị trí" cho thấy công ty thay đổi khá thường xuyên).
-- [ ] Ở form đăng ký/đăng nhập và form admin thêm/sửa nhân viên: trường Phòng ban đổi thành **dropdown chọn từ danh sách có sẵn** (hiện đang là ô tự gõ tự do ở trang admin).
-- [ ] 7 tài khoản nhân viên đã có sẵn (seed/tự đăng ký trước đó) cần được admin gán lại đúng phòng ban sau khi tính năng này lên, vì trước giờ phòng ban đang để trống hoặc gõ tự do.
+- [x] Đã có màn Admin thêm/sửa/ngừng hoạt động phòng ban; danh sách lưu trong database, không hardcode trong form. Seed/migration khởi tạo 8 phòng ban chính.
+- [x] Form đăng ký và form Admin thêm/sửa nhân viên dùng dropdown lấy từ danh sách phòng ban.
+- [x] Admin đã gán phòng ban đúng cho 7 tài khoản nhân viên hiện có (theo xác nhận của chủ dự án). Migration tự nối tên phòng ban khớp chính xác; tên cũ không khớp được giữ ở `legacyDepartment` để admin đối chiếu.
+
+Ghi chú: danh sách hiện khởi tạo 8 phòng ban chính. Việc có đưa Ban Giám đốc, Dự án Xây dựng Hệ thống và Ban Kiểm soát Nội bộ vào danh sách cần chủ dự án xác nhận.
 
 ## Yêu cầu 2 — Tách luồng Đăng ký (lần đầu) và Đăng nhập (các lần sau)
 
@@ -54,9 +56,9 @@ Ngoài 8 phòng trên, sơ đồ còn có Ban Giám đốc, Dự án Xây dựng
 
 **Yêu cầu kỹ thuật:**
 
-- [ ] Mật khẩu phải được **hash trước khi lưu DB** (không lưu dạng plaintext) — tái dùng đúng cơ chế `bcryptjs` đang dùng cho tài khoản Admin trong code hiện tại.
-- [ ] 7 tài khoản nhân viên đã tồn tại từ trước (tự đăng ký theo cơ chế cũ, chưa có mật khẩu) cần có đường đặt mật khẩu lần đầu, hoặc admin reset giúp — để không ai bị khóa ngoài hệ thống khi tính năng mới lên.
-- [ ] Cân nhắc thêm "Quên mật khẩu" cho nhân viên tự reset (vd. qua admin duyệt lại, vì hệ thống hiện không có email xác thực).
+- [x] Mật khẩu được hash bằng bcrypt trước khi lưu; không lưu plaintext. Dùng bcrypt native bất đồng bộ cho đăng nhập để giảm nghẽn CPU; tương thích với hash bcrypt đã có.
+- [x] Tài khoản cũ chưa có mật khẩu có luồng Admin tạo link đặt mật khẩu lần đầu/reset, tránh khóa tài khoản.
+- [x] Có thể yêu cầu Admin cấp lại link đặt mật khẩu khi quên mật khẩu. Chưa có email hoặc luồng tự phục hồi không cần Admin.
 
 ## Yêu cầu 3 — Tránh sập/chậm khi nhiều người truy cập cùng lúc
 
@@ -67,10 +69,14 @@ Ngoài 8 phòng trên, sơ đồ còn có Ban Giám đốc, Dự án Xây dựng
 
 **Yêu cầu IT kiểm tra & xử lý:**
 
-- [ ] Xác nhận Prisma đang dùng đúng connection pooling (transaction pooler qua pgbouncer) cho mọi truy vấn runtime — đã cấu hình nhưng cần review lại khi thêm tính năng mới (đăng ký/mật khẩu) để không vô tình mở thêm kết nối trực tiếp.
-- [ ] Load test thử với số lượng người dùng giả lập tương đương quy mô công ty (vd. 50–100 người cùng lúc) trước khi công bố rộng rãi, để biết giới hạn thực tế.
-- [ ] Cân nhắc nâng gói Supabase (tăng giới hạn kết nối) và/hoặc Vercel Pro nếu kết quả load test cho thấy gói miễn phí không đủ.
-- [ ] Thêm thông báo rõ ràng cho người dùng nếu hệ thống quá tải tạm thời (thay vì màn hình trắng/lỗi khó hiểu), để trải nghiệm không "sập" một cách khó chịu.
+- [x] Code runtime dùng Prisma singleton với `DATABASE_URL`; `.env` staging đã xác minh dùng Supabase transaction pooler cổng 6543. Deployment Vercel đã kết nối đúng database staging (đăng nhập `K6STAGE` thành công).
+- [x] Theo xác nhận của chủ dự án, đã gắn `DATABASE_URL` và `DIRECT_URL` vào Vercel Production. Không ghi giá trị bí mật vào tài liệu. Cấu hình kỳ vọng: `DATABASE_URL` dùng transaction pooler (cổng 6543, `pgbouncer=true`); `DIRECT_URL` dùng session pooler (cổng 5432).
+- [x] Chủ dự án xác nhận deployment production đã build, runtime kết nối database thành công và host/cổng trong Vercel Settings đã được đối chiếu. Không ghi giá trị bí mật vào tài liệu.
+- [x] Đã load test deployment Vercel đang trỏ tới Supabase staging: 50 VU/2 phút và 100 VU/2 phút. Cả hai lượt không có request lỗi; chủ dự án chấp nhận độ ổn định và độ trễ hiện tại (p95 khoảng 6 giây ở 100 VU) cho nhu cầu hiện tại, dù cao hơn ngưỡng kỹ thuật k6 2,5 giây. Kịch bản chỉ đăng nhập và đọc danh sách game, chưa kiểm tra luồng chơi ghi dữ liệu.
+- [x] Đã cân nhắc nâng Supabase/Vercel sau bài test qua Vercel staging 50/100 VU. Tạm thời chưa nâng gói: không có request lỗi và chủ dự án chấp nhận độ trễ hiện tại. p95 HTTP 6,13 giây ở 100 VU là tín hiệu cần theo dõi; chưa có metrics tài nguyên đồng thời để quy nguyên nhân cho Vercel hay Supabase. Đánh giá lại nếu có lỗi, độ trễ không còn chấp nhận được hoặc metrics cho thấy chạm giới hạn.
+- [x] Đã có phản hồi dễ hiểu và nút thử lại cho lỗi tạm thời/HTTP 503 ở các màn hình và API liên quan. Chưa fault-test chủ động tình huống hết connection pool.
+
+Chi tiết đo tải: ở 50 VU, HTTP p95 3,14 giây và auth-flow p95 4,60 giây; ở 100 VU, HTTP p95 6,13 giây và auth-flow p95 6,31 giây. Request failures là 0% ở cả hai lượt. Đánh giá chấp nhận được cho workload đã thử theo xác nhận của chủ dự án; ngưỡng p95 2,5 giây của k6 vẫn chưa đạt. Đây là kết quả trên staging, không đại diện cho database production hoặc luồng game có ghi dữ liệu.
 
 ## Yêu cầu 4 — Hiệu ứng trả lời đúng/sai + nhạc nền
 
@@ -78,18 +84,18 @@ Ngoài 8 phòng trên, sơ đồ còn có Ban Giám đốc, Dự án Xây dựng
 
 **Hiệu ứng trả lời đúng/sai:**
 
-- [ ] Trả lời đúng: hiệu ứng confetti/lòe sáng nhẹ quanh đáp án, kèm âm thanh "ting" vui tai, có thể thêm số điểm cộng bay lên (+10) cho sinh động.
-- [ ] Trả lời sai: hiệu ứng rung nhẹ (shake) ở ô đáp án chọn sai, kèm âm thanh "buzz" ngắn, vẫn hiển thị rõ đáp án đúng như hiện tại.
-- [ ] Trên điện thoại: thêm rung (vibration API) khi trả lời đúng/sai nếu trình duyệt hỗ trợ.
-- [ ] Hiệu ứng phải **nhẹ, không làm chậm thao tác** — người chơi vẫn bấm "Câu tiếp theo" được ngay, không bị hiệu ứng chặn mất vài giây.
+- [x] Câu đúng có confetti/ánh sáng nhẹ, tiếng ting và điểm cộng bay lên.
+- [x] Câu sai có shake và tiếng buzz ngắn; đáp án đúng vẫn hiển thị.
+- [x] Có gọi Vibration API khi trình duyệt/thiết bị hỗ trợ.
+- [x] Hiệu ứng không khóa nút chuyển câu; animation chạy độc lập, thao tác tiếp tục được ngay.
 
 **Nhạc nền khi chơi:**
 
-- [ ] Thêm 1 bản nhạc nền vui tươi (vibe Mario/quả dứa như theme hiện tại), phát lặp lại trong lúc chơi.
-- [ ] **Bắt buộc có nút bật/tắt nhạc** rõ ràng trên màn chơi — nhiều người sẽ để chế độ im lặng vì đang ngồi chung văn phòng/xưởng, không tiện bật tiếng.
-- [ ] Mặc định **nhạc đang tắt** (hoặc âm lượng thấp), người chơi tự bật nếu muốn — tránh làm phiền người xung quanh ngay khi vào game.
-- [ ] Lưu ý kỹ thuật: trình duyệt chặn tự động phát âm thanh có tiếng — chỉ phát được sau khi người dùng bấm nút nào đó (vd. "Bắt đầu chơi"), không thể tự phát ngay khi vào trang.
-- [ ] Dùng nhạc/âm thanh **royalty-free, có giấy phép dùng thương mại** (tránh vấn đề bản quyền khi dùng trong nội bộ công ty).
+- [x] Có giai điệu nền vui tươi tạo bằng Web Audio, phát lặp trong màn chơi.
+- [x] Có nút bật/tắt nhạc rõ ràng trên màn chơi.
+- [x] Nhạc mặc định tắt.
+- [x] Âm thanh chỉ khởi tạo/phát sau tương tác của người chơi, phù hợp giới hạn autoplay của trình duyệt.
+- [x] Giai điệu và hiệu ứng âm thanh được tổng hợp bằng Web Audio; không dùng bản thu thương mại/bên thứ ba cần license riêng.
 
 ## Yêu cầu 5 — Fix bug: "Loại câu hỏi (PICTURE_GUESSING) không khớp với loại game (QUIZ)"
 
@@ -106,8 +112,9 @@ Dẫn đến việc không thể thêm câu hỏi mới cho game.
 
 **Yêu cầu kỹ thuật:**
 
-- [ ] Tách riêng `gameUpdateSchema` trong `src/lib/validators.ts` cho các thao tác cập nhật (PATCH), tuyệt đối không để `.default("QUIZ")` tránh vô tình ghi đè loại game khi không truyền `type`.
-- [ ] Cập nhật API route `src/app/api/admin/games/[id]/route.ts` sử dụng `gameUpdateSchema` khi xử lý PATCH.
-- [ ] Ở frontend `src/app/admin/(dashboard)/games/[id]/page.tsx`: hàm `saveSettings` gửi kèm `type: game.type` và gọi lại `load()` sau khi lưu thành công để dữ liệu hiển thị luôn đồng bộ với database.
-- [ ] Kiểm tra lại database hiện tại: với những game nào trước đó đã bị ghi đè nhầm thành `QUIZ`, cập nhật lại đúng giá trị `type` (`PICTURE_GUESSING`, `TRUE_FALSE`, `WORD_PUZZLE`).
+- [x] Tách `gameUpdateSchema` không có default `QUIZ` cho PATCH.
+- [x] API PATCH dùng `gameUpdateSchema`.
+- [x] `saveSettings` gửi `type: game.type` và reload game sau khi lưu.
+- [x] Đã chạy audit dry-run trên database staging: cả 4 game đều nhất quán với loại câu hỏi; không phát hiện game bị ghi đè nhầm và không có dữ liệu nào bị sửa.
+- [x] Đã audit dry-run database production: cả 5 game đều nhất quán với loại câu hỏi; không phát hiện game bị ghi đè nhầm, nên không cần sửa dữ liệu.
 

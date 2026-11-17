@@ -41,9 +41,11 @@ nhập và chơi, điểm số lưu tập trung, bảng xếp hạng cập nhậ
   có thể dùng Supabase Postgres với transaction pooler cho runtime.
 - Không dùng NextAuth / Supabase Auth — session tự ký (HMAC) qua cookie
   httpOnly, vì luồng đăng nhập được đơn giản hoá theo yêu cầu.
-- Ảnh (cover game, ảnh câu hỏi) lưu local tại `public/uploads/` cho dev —
-  khi lên production nên đổi sang Supabase Storage (API đã tách lớp sẵn ở
-  `src/app/api/admin/upload/route.ts`, chỉ cần đổi phần ghi file).
+- Ảnh khi chạy local được lưu tại `public/uploads/`. Trên Vercel, API upload
+  lưu ảnh vào public Vercel Blob store. Kết nối store với project để Vercel
+  cấp `BLOB_STORE_ID` và dùng OIDC cho server upload; `BLOB_READ_WRITE_TOKEN`
+  chỉ cần nếu chạy ngoài Vercel hoặc cần upload trực tiếp từ trình duyệt.
+  Giới hạn ảnh upload là 4 MB để nằm dưới giới hạn payload của Vercel Functions.
 
 ## Chạy local
 
@@ -96,8 +98,10 @@ có thẩm quyền cấu hình lại trước khi phát hành nội bộ:
    `DATABASE_URL` thành transaction-pooler URL của Supabase và `DIRECT_URL`
    thành URL direct/session dùng cho migration; kiểm tra query parameter
    pooler theo hướng dẫn Prisma/Supabase trước khi triển khai.
-4. **Lưu trữ ảnh**: thay `src/app/api/admin/upload/route.ts` (đang ghi vào
-   `public/uploads/`) bằng upload lên Supabase Storage.
+4. **Lưu trữ ảnh**: trong Vercel, tạo public Blob store và kết nối với project.
+   Server upload dùng OIDC qua `BLOB_STORE_ID` do Vercel quản lý; không cần tạo
+   token tĩnh nếu chỉ upload từ server route. File ảnh được lưu riêng khỏi
+   filesystem tạm thời của function.
 5. **Load testing**: chạy kịch bản local trong `load-tests/README.md` để
    tìm vấn đề ứng dụng trước. Local Docker không mô phỏng Vercel serverless;
    cần staging Vercel/Supabase riêng để đo pooler và compute trước khi công bố.
