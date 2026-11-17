@@ -42,6 +42,7 @@ export default function PlaySessionPage() {
 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+  const [hintRetryable, setHintRetryable] = useState(false);
   const [usedHint, setUsedHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadErrorRetryable, setLoadErrorRetryable] = useState(false);
@@ -74,6 +75,7 @@ export default function PlaySessionPage() {
       setPlacedIndices([]);
       setFeedback(null);
       setHint(null);
+      setHintRetryable(false);
       setUsedHint(false);
       const firstUnanswered = data.questions.findIndex(
         (q: Question) => !q.answered,
@@ -134,13 +136,23 @@ export default function PlaySessionPage() {
 
   async function requestHint() {
     if (!currentQuestion) return;
-    const res = await fetch(
-      `/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`,
-    );
-    const data = await res.json();
-    if (res.ok) {
+    setHintRetryable(false);
+    try {
+      const res = await fetch(
+        `/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`,
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Không thể tải gợi ý.");
+        setHintRetryable(res.status === 503);
+        return;
+      }
+      setError(null);
       setHint(data.hint);
       setUsedHint(true);
+    } catch {
+      setError("Không thể tải gợi ý do kết nối tạm thời bị gián đoạn.");
+      setHintRetryable(true);
     }
   }
 
@@ -208,6 +220,7 @@ export default function PlaySessionPage() {
     setPlacedIndices([]);
     setFeedback(null);
     setHint(null);
+    setHintRetryable(false);
     setUsedHint(false);
     if (currentIndex + 1 >= questions.length) {
       finish();
@@ -298,7 +311,12 @@ export default function PlaySessionPage() {
           </p>
         )}
 
-        {completionRetryable ? (
+        {hintRetryable ? (
+          <div className="space-y-2">
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <TemporaryUnavailableNotice onRetry={() => void requestHint()} />
+          </div>
+        ) : completionRetryable ? (
           <TemporaryUnavailableNotice onRetry={() => void finish()} />
         ) : answerNeedsSync ? (
           <div className="space-y-2">

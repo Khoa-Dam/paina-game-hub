@@ -13,6 +13,11 @@ const authFlow = new Trend("employee_auth_flow_ms", true);
 const employeeStatusDuration = new Trend("employee_status_duration", true);
 const employeeLoginDuration = new Trend("employee_login_duration", true);
 const gameListDuration = new Trend("game_list_duration", true);
+const gameDetailDuration = new Trend("game_detail_duration", true);
+const sessionStartDuration = new Trend("session_start_duration", true);
+const answerDuration = new Trend("answer_duration", true);
+const sessionReadDuration = new Trend("session_read_duration", true);
+const sessionCompleteDuration = new Trend("session_complete_duration", true);
 const targetHostMatch = baseUrl.match(/^https?:\/\/(\[[^\]]+\]|[^/:?#]+)/i);
 if (!targetHostMatch) {
   throw new Error("BASE_URL must be an absolute HTTP or HTTPS URL.");
@@ -190,6 +195,7 @@ export default function () {
 
   if (gameSlug) {
     const gameResponse = http.get(`${baseUrl}/api/games/${gameSlug}`);
+    gameDetailDuration.add(gameResponse.timings.duration);
     const gameOk = check(gameResponse, {
       "game detail returns 200": (response) => response.status === 200,
     });
@@ -202,6 +208,7 @@ export default function () {
         JSON.stringify({ gameId: game.id }),
         { headers: { "Content-Type": "application/json" } },
       );
+      sessionStartDuration.add(sessionResponse.timings.duration);
       const sessionStarted = check(sessionResponse, {
         "game session starts": (response) => response.status === 200,
       });
@@ -209,9 +216,50 @@ export default function () {
 
       if (sessionStarted) {
         const sessionId = sessionResponse.json("sessionId");
+        const questions = getJsonField(sessionResponse, "questions") || [];
+        const hasQuestions = Array.isArray(questions) && questions.length > 0;
+        check(sessionResponse, {
+          "game session includes questions": () => hasQuestions,
+        });
+        failures.add(!hasQuestions);
+
+        if (hasQuestions) {
+          for (const question of questions) {
+            let answer;
+            if (question.type === "QUIZ" || question.type === "TRUE_FALSE") {
+              answer = { selectedIndex: 0 };
+            } else if (question.type === "PICTURE_GUESSING") {
+              answer = { answerText: "k6-load-test" };
+            } else if (
+              question.type === "WORD_PUZZLE" &&
+              Array.isArray(question.scrambledTokens)
+            ) {
+              answer = { orderedTokens: question.scrambledTokens };
+            }
+
+            if (!answer) {
+              failures.add(true);
+              continue;
+            }
+
+            const answerResponse = http.post(
+              `${baseUrl}/api/sessions/${sessionId}/answer`,
+              JSON.stringify({ questionId: question.id, ...answer }),
+              { headers: { "Content-Type": "application/json" } },
+            );
+            answerDuration.add(answerResponse.timings.duration);
+            const answerOk = check(answerResponse, {
+              "question answer is accepted": (response) =>
+                response.status === 200,
+            });
+            failures.add(!answerOk);
+          }
+        }
+
         const sessionReadResponse = http.get(
           `${baseUrl}/api/sessions/${sessionId}`,
         );
+        sessionReadDuration.add(sessionReadResponse.timings.duration);
         const sessionReadOk = check(sessionReadResponse, {
           "game session loads": (response) => response.status === 200,
         });
@@ -221,6 +269,7 @@ export default function () {
           `${baseUrl}/api/sessions/${sessionId}/complete`,
           null,
         );
+        sessionCompleteDuration.add(completeResponse.timings.duration);
         const completeOk = check(completeResponse, {
           "game session completes": (response) => response.status === 200,
         });

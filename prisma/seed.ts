@@ -1,5 +1,8 @@
+import { loadEnvConfig } from "@next/env";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+loadEnvConfig(process.cwd());
 
 const prisma = new PrismaClient();
 
@@ -23,7 +26,7 @@ async function main() {
     update: {},
     create: { username: adminUsername, passwordHash },
   });
-  console.log(`Admin account ready: ${adminUsername} / ${adminPassword}`);
+  console.log(`Admin account ready: ${adminUsername}. Password not printed.`);
 
   const departments = [
     { code: "01", name: "P. Kinh doanh Sỉ", sortOrder: 1 },

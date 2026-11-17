@@ -41,15 +41,21 @@ export async function clearAdminSession() {
 }
 
 export async function getCurrentEmployee() {
-  const token = (await cookies()).get(EMPLOYEE_COOKIE)?.value;
-  const payload = verify<EmployeePayload>(token);
-  if (!payload) return null;
+  const employeeId = await getEmployeeIdFromSessionToken();
+  if (!employeeId) return null;
+
   const employee = await prisma.employee.findUnique({
-    where: { id: payload.employeeId },
+    where: { id: employeeId },
     include: { departmentInfo: { select: { name: true } } },
   });
   if (!employee || employee.status !== "ACTIVE") return null;
   return { ...employee, department: departmentName(employee) };
+}
+
+export async function getEmployeeIdFromSessionToken() {
+  const token = (await cookies()).get(EMPLOYEE_COOKIE)?.value;
+  const payload = verify<EmployeePayload>(token);
+  return payload?.employeeId ?? null;
 }
 
 export async function getCurrentAdmin() {

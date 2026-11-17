@@ -1,9 +1,17 @@
 import { redirect } from "next/navigation";
 import { getCurrentEmployee } from "@/lib/session";
+import { isTransientDatabaseError } from "@/lib/apiErrorResponse";
 import Navbar from "@/components/Navbar";
+import TemporaryUnavailablePage from "@/components/TemporaryUnavailablePage";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const employee = await getCurrentEmployee();
+  let employee: Awaited<ReturnType<typeof getCurrentEmployee>>;
+  try {
+    employee = await getCurrentEmployee();
+  } catch (error) {
+    if (isTransientDatabaseError(error)) return <TemporaryUnavailablePage />;
+    throw error;
+  }
   if (!employee) redirect("/login");
 
   return (

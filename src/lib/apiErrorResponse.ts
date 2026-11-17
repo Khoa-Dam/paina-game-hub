@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 const TRANSIENT_PRISMA_CODES = new Set([
   "P1001",
   "P1002",
+  "P1008",
   "P1017",
   "P2024",
   "P2037",
@@ -23,7 +24,7 @@ function getErrorCode(error: unknown): string | undefined {
   return getErrorCode(value.cause);
 }
 
-function isTransientDatabaseError(error: unknown): boolean {
+export function isTransientDatabaseError(error: unknown): boolean {
   const code = getErrorCode(error);
   if (
     code &&
