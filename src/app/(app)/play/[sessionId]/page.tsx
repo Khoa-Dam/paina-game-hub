@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import {
+  AnswerFeedbackCelebration,
+  MusicToggle,
+  useGameAudio,
+} from "@/features/gameplay";
 
 type Question = {
   id: string;
@@ -17,6 +22,7 @@ type Question = {
 
 type Feedback = {
   isCorrect: boolean;
+  pointsEarned?: number;
   correctIndex?: number;
   correctAnswer?: string;
   correctOrder?: string[];
@@ -25,6 +31,13 @@ type Feedback = {
 export default function PlaySessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
+  const {
+    audioSupported,
+    musicEnabled,
+    playAnswerFeedback,
+    toggleMusic,
+    unlockAudio,
+  } = useGameAudio();
 
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
@@ -47,6 +60,10 @@ export default function PlaySessionPage() {
   const completingRef = useRef(false);
 
   useEffect(() => {
+    if (feedback) playAnswerFeedback(feedback.isCorrect);
+  }, [feedback, playAnswerFeedback]);
+
+  useEffect(() => {
     fetch(`/api/sessions/${sessionId}`)
       .then(async (r) => {
         const d = await r.json();
@@ -55,8 +72,12 @@ export default function PlaySessionPage() {
         setDurationSeconds(d.durationSeconds);
         setStartedAt(d.startedAt);
         setStatus(d.status);
-        const firstUnanswered = d.questions.findIndex((q: Question) => !q.answered);
-        setCurrentIndex(firstUnanswered === -1 ? d.questions.length : firstUnanswered);
+        const firstUnanswered = d.questions.findIndex(
+          (q: Question) => !q.answered,
+        );
+        setCurrentIndex(
+          firstUnanswered === -1 ? d.questions.length : firstUnanswered,
+        );
       })
       .catch((e) => setError(e.message));
   }, [sessionId]);
@@ -64,7 +85,9 @@ export default function PlaySessionPage() {
   const finish = useCallback(async () => {
     if (completingRef.current) return;
     completingRef.current = true;
-    const res = await fetch(`/api/sessions/${sessionId}/complete`, { method: "POST" });
+    const res = await fetch(`/api/sessions/${sessionId}/complete`, {
+      method: "POST",
+    });
     if (res.ok) {
       router.push(`/result/${sessionId}`);
     } else {
@@ -88,12 +111,14 @@ export default function PlaySessionPage() {
 
   const currentQuestion = useMemo(
     () => (questions ? questions[currentIndex] : undefined),
-    [questions, currentIndex]
+    [questions, currentIndex],
   );
 
   async function requestHint() {
     if (!currentQuestion) return;
-    const res = await fetch(`/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`);
+    const res = await fetch(
+      `/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`,
+    );
     const data = await res.json();
     if (res.ok) {
       setHint(data.hint);
@@ -104,19 +129,36 @@ export default function PlaySessionPage() {
   async function submitAnswer() {
     if (!currentQuestion) return;
     let body: Record<string, unknown>;
-    if (currentQuestion.type === "QUIZ" || currentQuestion.type === "TRUE_FALSE") {
+    if (
+      currentQuestion.type === "QUIZ" ||
+      currentQuestion.type === "TRUE_FALSE"
+    ) {
       if (selected === null) return;
-      body = { questionId: currentQuestion.id, selectedIndex: selected, usedHint };
+      body = {
+        questionId: currentQuestion.id,
+        selectedIndex: selected,
+        usedHint,
+      };
     } else if (currentQuestion.type === "PICTURE_GUESSING") {
       if (!textAnswer.trim()) return;
-      body = { questionId: currentQuestion.id, answerText: textAnswer, usedHint };
+      body = {
+        questionId: currentQuestion.id,
+        answerText: textAnswer,
+        usedHint,
+      };
     } else {
-      if (placedIndices.length !== (currentQuestion.scrambledTokens?.length ?? 0)) return;
-      const orderedTokens = placedIndices.map((i) => currentQuestion.scrambledTokens![i]);
+      if (
+        placedIndices.length !== (currentQuestion.scrambledTokens?.length ?? 0)
+      )
+        return;
+      const orderedTokens = placedIndices.map(
+        (i) => currentQuestion.scrambledTokens![i],
+      );
       body = { questionId: currentQuestion.id, orderedTokens, usedHint };
     }
 
     setError(null);
+    unlockAudio();
     const res = await fetch(`/api/sessions/${sessionId}/answer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -129,6 +171,7 @@ export default function PlaySessionPage() {
     }
     setFeedback({
       isCorrect: data.isCorrect,
+      pointsEarned: data.pointsEarned,
       correctIndex: data.correctIndex,
       correctAnswer: data.correctAnswer,
       correctOrder: data.correctOrder,
@@ -158,36 +201,62 @@ export default function PlaySessionPage() {
     currentQuestion.type === "QUIZ" || currentQuestion.type === "TRUE_FALSE"
       ? selected !== null
       : currentQuestion.type === "PICTURE_GUESSING"
-      ? textAnswer.trim().length > 0
-      : placedIndices.length === (currentQuestion.scrambledTokens?.length ?? 0) && placedIndices.length > 0;
+        ? textAnswer.trim().length > 0
+        : placedIndices.length ===
+            (currentQuestion.scrambledTokens?.length ?? 0) &&
+          placedIndices.length > 0;
+
+  const feedbackMessage = feedback
+    ? feedback.isCorrect
+      ? `Chính xác! Bạn được cộng ${feedback.pointsEarned ?? 0} điểm.`
+      : currentQuestion.type === "QUIZ" || currentQuestion.type === "TRUE_FALSE"
+        ? `Chưa đúng. Đáp án đúng: ${currentQuestion.choices?.[feedback.correctIndex ?? -1] ?? ""}`
+        : currentQuestion.type === "PICTURE_GUESSING"
+          ? `Chưa đúng. Đáp án đúng: ${feedback.correctAnswer ?? ""}`
+          : `Chưa đúng. Thứ tự đúng: ${feedback.correctOrder?.join(" ") ?? ""}`
+    : "";
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="badge bg-sky-100 text-sky-700">
           Câu {currentIndex + 1}/{questions.length}
         </span>
-        {secondsLeft !== null && (
-          <p
-            className={`font-heading text-xl font-semibold ${
-              secondsLeft <= 10 ? "animate-pop text-pink-600" : "text-ink"
-            }`}
-          >
-            ⏱ {secondsLeft}s
-          </p>
-        )}
+        <div className="flex items-center gap-2">
+          <MusicToggle
+            enabled={musicEnabled}
+            supported={audioSupported}
+            onToggle={toggleMusic}
+          />
+          {secondsLeft !== null && (
+            <p
+              className={`font-heading text-xl font-semibold ${
+                secondsLeft <= 10 ? "animate-pop text-pink-600" : "text-ink"
+              }`}
+            >
+              ⏱ {secondsLeft}s
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="card space-y-4">
         {currentQuestion.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentQuestion.imageUrl} alt="" className="max-h-64 w-full rounded-2xl object-contain" />
+          <img
+            src={currentQuestion.imageUrl}
+            alt=""
+            className="max-h-64 w-full rounded-2xl object-contain"
+          />
         )}
         {currentQuestion.prompt && (
-          <h2 className="font-heading text-xl font-semibold text-ink">{currentQuestion.prompt}</h2>
+          <h2 className="font-heading text-xl font-semibold text-ink">
+            {currentQuestion.prompt}
+          </h2>
         )}
 
-        {(currentQuestion.type === "QUIZ" || currentQuestion.type === "TRUE_FALSE") && (
+        {(currentQuestion.type === "QUIZ" ||
+          currentQuestion.type === "TRUE_FALSE") && (
           <ChoiceAnswer
             choices={currentQuestion.choices ?? []}
             selected={selected}
@@ -201,6 +270,7 @@ export default function PlaySessionPage() {
             value={textAnswer}
             onChange={setTextAnswer}
             feedback={feedback}
+            pointsEarned={feedback?.pointsEarned ?? 0}
             disabled={!!feedback}
           />
         )}
@@ -211,26 +281,50 @@ export default function PlaySessionPage() {
             placedIndices={placedIndices}
             onChange={setPlacedIndices}
             feedback={feedback}
+            pointsEarned={feedback?.pointsEarned ?? 0}
           />
         )}
 
-        {hint && <p className="rounded-2xl bg-lime-50 p-3 text-sm text-lime-700">💡 {hint}</p>}
+        <p
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {feedbackMessage}
+        </p>
+
+        {hint && (
+          <p className="rounded-2xl bg-lime-50 p-3 text-sm text-lime-700">
+            💡 {hint}
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex items-center justify-between">
           {!feedback && currentQuestion.hasHint && (
-            <button onClick={requestHint} className="btn-secondary" disabled={!!hint}>
+            <button
+              onClick={requestHint}
+              className="btn-secondary"
+              disabled={!!hint}
+            >
               Xem gợi ý
             </button>
           )}
           {!feedback ? (
-            <button className="btn-primary ml-auto" disabled={!canSubmit} onClick={submitAnswer}>
+            <button
+              className="btn-primary ml-auto"
+              disabled={!canSubmit}
+              onClick={submitAnswer}
+            >
               Trả lời
             </button>
           ) : (
             <button className="btn-primary ml-auto" onClick={next}>
-              {currentIndex + 1 >= questions.length ? "Hoàn tất" : "Câu tiếp theo"}
+              {currentIndex + 1 >= questions.length
+                ? "Hoàn tất"
+                : "Câu tiếp theo"}
             </button>
           )}
         </div>
@@ -244,39 +338,49 @@ function ChoiceAnswer({
   selected,
   feedback,
   onSelect,
+  pointsEarned,
 }: {
   choices: string[];
   selected: number | null;
   feedback: Feedback | null;
   onSelect: (i: number) => void;
+  pointsEarned?: number;
 }) {
   return (
-    <div className="grid gap-2">
-      {choices.map((choice, i) => {
-        const isSelected = selected === i;
-        const isCorrectChoice = feedback && feedback.correctIndex === i;
-        const isWrongSelected = feedback && isSelected && !feedback.isCorrect;
-        return (
-          <button
-            key={i}
-            disabled={!!feedback}
-            onClick={() => onSelect(i)}
-            className={`flex items-center justify-between rounded-2xl border-2 px-4 py-3 text-left font-body transition-all ${
-              isCorrectChoice
-                ? "border-lime-400 bg-lime-100 text-ink"
-                : isWrongSelected
-                ? "border-pink-400 bg-pink-50 text-ink"
-                : isSelected
-                ? "border-ink bg-ink text-white"
-                : "border-border bg-white hover:-translate-y-0.5 hover:border-lime-400"
-            }`}
-          >
-            {choice}
-            {isCorrectChoice && <span>✅</span>}
-            {isWrongSelected && <span>❌</span>}
-          </button>
-        );
-      })}
+    <div className="answer-feedback-area">
+      {feedback && (
+        <AnswerFeedbackCelebration
+          isCorrect={feedback.isCorrect}
+          pointsEarned={pointsEarned ?? feedback.pointsEarned ?? 0}
+        />
+      )}
+      <div className="grid gap-2">
+        {choices.map((choice, i) => {
+          const isSelected = selected === i;
+          const isCorrectChoice = feedback && feedback.correctIndex === i;
+          const isWrongSelected = feedback && isSelected && !feedback.isCorrect;
+          return (
+            <button
+              key={i}
+              disabled={!!feedback}
+              onClick={() => onSelect(i)}
+              className={`flex items-center justify-between rounded-2xl border-2 px-4 py-3 text-left font-body transition-all ${
+                isCorrectChoice
+                  ? "answer-correct-glow border-lime-400 bg-lime-100 text-ink"
+                  : isWrongSelected
+                    ? "answer-wrong-shake border-pink-400 bg-pink-50 text-ink"
+                    : isSelected
+                      ? "border-ink bg-ink text-white"
+                      : "border-border bg-white hover:-translate-y-0.5 hover:border-lime-400"
+              }`}
+            >
+              {choice}
+              {isCorrectChoice && <span>✅</span>}
+              {isWrongSelected && <span>❌</span>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -285,25 +389,43 @@ function PictureAnswer({
   value,
   onChange,
   feedback,
+  pointsEarned,
   disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
   feedback: Feedback | null;
+  pointsEarned?: number;
   disabled: boolean;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="answer-feedback-area space-y-2">
+      {feedback && (
+        <AnswerFeedbackCelebration
+          isCorrect={feedback.isCorrect}
+          pointsEarned={pointsEarned ?? feedback.pointsEarned ?? 0}
+        />
+      )}
       <input
-        className="input"
+        className={`input ${
+          feedback
+            ? feedback.isCorrect
+              ? "answer-correct-glow"
+              : "answer-wrong-shake"
+            : ""
+        }`}
         placeholder="Gõ đáp án của bạn..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
       />
       {feedback && (
-        <p className={`font-semibold ${feedback.isCorrect ? "text-lime-700" : "text-pink-600"}`}>
-          {feedback.isCorrect ? "✅ Chính xác!" : `❌ Đáp án đúng: ${feedback.correctAnswer}`}
+        <p
+          className={`font-semibold ${feedback.isCorrect ? "text-lime-700" : "text-pink-600"}`}
+        >
+          {feedback.isCorrect
+            ? "✅ Chính xác!"
+            : `❌ Đáp án đúng: ${feedback.correctAnswer}`}
         </p>
       )}
     </div>
@@ -315,18 +437,40 @@ function WordPuzzleAnswer({
   placedIndices,
   onChange,
   feedback,
+  pointsEarned,
 }: {
   tokens: string[];
   placedIndices: number[];
   onChange: (indices: number[]) => void;
   feedback: Feedback | null;
+  pointsEarned?: number;
 }) {
-  const remainingIndices = tokens.map((_, i) => i).filter((i) => !placedIndices.includes(i));
+  const remainingIndices = tokens
+    .map((_, i) => i)
+    .filter((i) => !placedIndices.includes(i));
 
   return (
-    <div className="space-y-3">
-      <div className="flex min-h-[3rem] flex-wrap gap-2 rounded-2xl border-2 border-dashed border-border bg-paper p-3">
-        {placedIndices.length === 0 && <span className="text-sm text-muted">Chạm từ bên dưới theo thứ tự đúng</span>}
+    <div className="answer-feedback-area space-y-3">
+      {feedback && (
+        <AnswerFeedbackCelebration
+          isCorrect={feedback.isCorrect}
+          pointsEarned={pointsEarned ?? feedback.pointsEarned ?? 0}
+        />
+      )}
+      <div
+        className={`flex min-h-[3rem] flex-wrap gap-2 rounded-2xl border-2 border-dashed border-border bg-paper p-3 ${
+          feedback
+            ? feedback.isCorrect
+              ? "answer-correct-glow"
+              : "answer-wrong-shake"
+            : ""
+        }`}
+      >
+        {placedIndices.length === 0 && (
+          <span className="text-sm text-muted">
+            Chạm từ bên dưới theo thứ tự đúng
+          </span>
+        )}
         {placedIndices.map((tokenIdx, pos) => (
           <button
             key={pos}
@@ -353,8 +497,12 @@ function WordPuzzleAnswer({
       </div>
 
       {feedback && (
-        <p className={`font-semibold ${feedback.isCorrect ? "text-lime-700" : "text-pink-600"}`}>
-          {feedback.isCorrect ? "✅ Chính xác!" : `❌ Thứ tự đúng: ${feedback.correctOrder?.join(" ")}`}
+        <p
+          className={`font-semibold ${feedback.isCorrect ? "text-lime-700" : "text-pink-600"}`}
+        >
+          {feedback.isCorrect
+            ? "✅ Chính xác!"
+            : `❌ Thứ tự đúng: ${feedback.correctOrder?.join(" ")}`}
         </p>
       )}
     </div>
