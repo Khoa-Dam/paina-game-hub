@@ -37,9 +37,8 @@ nhập và chơi, điểm số lưu tập trung, bảng xếp hạng cập nhậ
 ## Công nghệ
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS
-- Prisma ORM — **SQLite cho local dev** (không cần cài Docker/Supabase để
-  chạy demo), schema portable sang Postgres/Supabase cho production (xem
-  mục "Chuyển sang Supabase (production)" bên dưới).
+- Prisma ORM + PostgreSQL. Local dev dùng PostgreSQL trong Docker; production
+  có thể dùng Supabase Postgres với transaction pooler cho runtime.
 - Không dùng NextAuth / Supabase Auth — session tự ký (HMAC) qua cookie
   httpOnly, vì luồng đăng nhập được đơn giản hoá theo yêu cầu.
 - Ảnh (cover game, ảnh câu hỏi) lưu local tại `public/uploads/` cho dev —
@@ -50,10 +49,22 @@ nhập và chơi, điểm số lưu tập trung, bảng xếp hạng cập nhậ
 
 ```bash
 npm install
+npx prisma generate
 npx prisma migrate dev
 npm run db:seed
 npm run dev
 ```
+
+Khởi động container PostgreSQL local trước khi migrate:
+
+```powershell
+docker start paina-postgres
+```
+
+Trong `.env`, local có thể dùng cùng URL trực tiếp cho `DATABASE_URL` và
+`DIRECT_URL`. Trên Vercel, `DATABASE_URL` nên là Supabase transaction pooler;
+`DIRECT_URL` dành cho migration và tác vụ cần kết nối direct/session. Không
+đưa file `.env` hoặc thông tin xác thực vào Git.
 
 Mở `http://localhost:3000`.
 
@@ -81,17 +92,15 @@ có thẩm quyền cấu hình lại trước khi phát hành nội bộ:
    dùng giá trị mẫu trong repo.
 2. **`ADMIN_PASSWORD`** — đổi ngay sau lần seed đầu, hoặc đổi qua Prisma
    Studio / seed lại với mật khẩu mới.
-3. **Database**: chuyển `prisma/schema.prisma` datasource `provider` từ
-   `sqlite` sang `postgresql`, trỏ `DATABASE_URL` sang Supabase Postgres,
-   chạy lại `prisma migrate deploy`. Toàn bộ model đã viết để tương thích cả
-   hai (không dùng tính năng riêng của SQLite).
+3. **Database**: schema hiện dùng PostgreSQL. Trên Vercel, đặt
+   `DATABASE_URL` thành transaction-pooler URL của Supabase và `DIRECT_URL`
+   thành URL direct/session dùng cho migration; kiểm tra query parameter
+   pooler theo hướng dẫn Prisma/Supabase trước khi triển khai.
 4. **Lưu trữ ảnh**: thay `src/app/api/admin/upload/route.ts` (đang ghi vào
    `public/uploads/`) bằng upload lên Supabase Storage.
-5. **Đăng nhập nhân sự hiện là Họ tên + Mã nhân viên, không có xác thực
-   thứ hai** — đây là lựa chọn được xác nhận rõ ràng từ người yêu cầu dự án
-   (ưu tiên đơn giản, không cần OTP/Google OAuth). Nếu sau này cần an toàn
-   hơn (vd. tránh nhân viên đăng nhập giùm nhau), nên bổ sung OTP email qua
-   Supabase Auth — kiến trúc hiện tại cho phép thêm vào mà không đổi schema.
+5. **Load testing**: chạy kịch bản local trong `load-tests/README.md` để
+   tìm vấn đề ứng dụng trước. Local Docker không mô phỏng Vercel serverless;
+   cần staging Vercel/Supabase riêng để đo pooler và compute trước khi công bố.
 6. Triển khai Vercel: `vercel.json`/CI chưa thiết lập trong lần này (người
    dùng chọn "chạy local trước để demo"); khi sẵn sàng, tạo project Vercel,
    set các biến môi trường trên, rồi deploy như Next.js app thông thường.

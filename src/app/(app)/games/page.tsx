@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
+import TemporaryUnavailableNotice from "@/components/TemporaryUnavailableNotice";
 
 type GameListItem = {
   id: string;
@@ -26,17 +27,46 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function GamesPage() {
   const [games, setGames] = useState<GameListItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retryableError, setRetryableError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/games")
-      .then((r) => r.json())
-      .then((d) => setGames(d.games || []));
+    void loadGames();
   }, []);
+
+  async function loadGames() {
+    setError(null);
+    setRetryableError(false);
+    try {
+      const response = await fetch("/api/games");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setRetryableError(response.status === 503);
+        throw new Error(data.error || "Không thể tải danh sách game.");
+      }
+      setGames(data.games || []);
+    } catch (loadError) {
+      if (loadError instanceof TypeError) setRetryableError(true);
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Không thể tải danh sách game.",
+      );
+      setGames(null);
+    }
+  }
 
   return (
     <div className="space-y-4">
-      <h1 className="font-heading text-2xl font-semibold text-ink">Danh sách game 🎮</h1>
-      {!games && <p className="text-muted">Đang tải...</p>}
+      <h1 className="font-heading text-2xl font-semibold text-ink">
+        Danh sách game 🎮
+      </h1>
+      {error && retryableError ? (
+        <TemporaryUnavailableNotice onRetry={() => void loadGames()} />
+      ) : (
+        error && <p className="text-sm text-red-600">{error}</p>
+      )}
+      {!games && !error && <p className="text-muted">Đang tải...</p>}
       {games && games.length === 0 && (
         <p className="card text-muted">Chưa có game nào được công bố.</p>
       )}
@@ -49,16 +79,27 @@ export default function GamesPage() {
           >
             {g.coverImageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={g.coverImageUrl} alt="" className="h-32 w-full rounded-2xl object-cover" />
+              <img
+                src={g.coverImageUrl}
+                alt=""
+                className="h-32 w-full rounded-2xl object-cover"
+              />
             )}
             <div className="flex items-center justify-between">
-              <h2 className="font-heading text-lg font-semibold text-ink">{g.title}</h2>
+              <h2 className="font-heading text-lg font-semibold text-ink">
+                {g.title}
+              </h2>
               <StatusBadge status={g.status} />
             </div>
-            <p className="text-sm text-muted">{TYPE_LABELS[g.type] || g.type}</p>
-            {g.description && <p className="text-sm text-ink/80">{g.description}</p>}
+            <p className="text-sm text-muted">
+              {TYPE_LABELS[g.type] || g.type}
+            </p>
+            {g.description && (
+              <p className="text-sm text-ink/80">{g.description}</p>
+            )}
             <p className="text-xs text-muted">
-              {g._count.questions} câu hỏi · Lượt chơi: {g.playsUsed}/{g.maxPlaysPerUser}
+              {g._count.questions} câu hỏi · Lượt chơi: {g.playsUsed}/
+              {g.maxPlaysPerUser}
             </p>
           </Link>
         ))}

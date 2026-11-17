@@ -10,13 +10,15 @@ import type {
   EmployeeStatusResponse,
   LoginFormValues,
 } from "../types";
-import { parseApiResponse } from "../utils/api";
+import { isRecoverableApiError, parseApiResponse } from "../utils/api";
 
 export function useEmployeeLogin() {
   const router = useRouter();
   const [employeeCode, setEmployeeCode] = useState("");
   const [accountState, setAccountState] = useState<AccountState | null>(null);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [departmentLoadError, setDepartmentLoadError] = useState(false);
+  const [statusCheckError, setStatusCheckError] = useState(false);
   const [form, setForm] = useState<LoginFormValues>(INITIAL_FORM);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,15 +31,33 @@ export function useEmployeeLogin() {
         if (!cancelled) setDepartments(items);
       })
       .catch(() => {
-        if (!cancelled) setDepartments([]);
+        if (!cancelled) {
+          setDepartments([]);
+          setDepartmentLoadError(true);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  async function retryDepartments() {
+    setDepartmentLoadError(false);
+    try {
+      const response = await fetch(LOGIN_ENDPOINTS.departments);
+      const result = await parseApiResponse<DepartmentsResponse>(response);
+      setDepartments(result.departments);
+    } catch {
+      setDepartmentLoadError(true);
+    }
+  }
+
   async function checkEmployeeCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await lookupEmployee();
+  }
+
+  async function lookupEmployee() {
     setError(null);
     setLoading(true);
     try {
@@ -49,7 +69,9 @@ export function useEmployeeLogin() {
       const result = await parseApiResponse<EmployeeStatusResponse>(response);
       setAccountState(result.status);
       setForm(INITIAL_FORM);
+      setStatusCheckError(false);
     } catch (requestError) {
+      setStatusCheckError(isRecoverableApiError(requestError));
       setError(
         requestError instanceof Error
           ? requestError.message
@@ -102,6 +124,7 @@ export function useEmployeeLogin() {
   function changeEmployeeCode(value: string) {
     setEmployeeCode(value);
     setAccountState(null);
+    setStatusCheckError(false);
     setError(null);
   }
 
@@ -116,12 +139,16 @@ export function useEmployeeLogin() {
     changeEmployeeCode,
     checkEmployeeCode,
     departments,
+    departmentLoadError,
     employeeCode,
     error,
     form,
     loading,
+    retryDepartments,
     resetAccountState,
+    retryStatusCheck: lookupEmployee,
     submitCredentials,
+    statusCheckError,
     updateForm,
   };
 }

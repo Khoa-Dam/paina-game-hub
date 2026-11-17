@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { setEmployeeSession } from "@/lib/session";
 import { passwordSetupSchema } from "@/lib/validators";
 import { employeePasswordError } from "@/lib/passwordPolicy";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function POST(
+export const POST = withApiErrorHandling(async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
@@ -80,4 +81,4 @@ export async function POST(
 
   await setEmployeeSession(setup.employee.id);
   return NextResponse.json({ ok: true });
-}
+});

@@ -7,6 +7,7 @@ import {
   MusicToggle,
   useGameAudio,
 } from "@/features/gameplay";
+import TemporaryUnavailableNotice from "@/components/TemporaryUnavailableNotice";
 
 type Question = {
   id: string;
@@ -54,8 +55,12 @@ export default function PlaySessionPage() {
 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+  const [hintRetryable, setHintRetryable] = useState(false);
   const [usedHint, setUsedHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadErrorRetryable, setLoadErrorRetryable] = useState(false);
+  const [answerNeedsSync, setAnswerNeedsSync] = useState(false);
+  const [completionRetryable, setCompletionRetryable] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const completingRef = useRef(false);
 
@@ -67,7 +72,10 @@ export default function PlaySessionPage() {
     fetch(`/api/sessions/${sessionId}`)
       .then(async (r) => {
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
+        if (!r.ok) {
+          setLoadErrorRetryable(r.status === 503);
+          throw new Error(d.error);
+        }
         setQuestions(d.questions);
         setDurationSeconds(d.durationSeconds);
         setStartedAt(d.startedAt);
@@ -79,20 +87,32 @@ export default function PlaySessionPage() {
           firstUnanswered === -1 ? d.questions.length : firstUnanswered,
         );
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        if (e instanceof TypeError) setLoadErrorRetryable(true);
+        setError(e.message);
+      });
   }, [sessionId]);
 
   const finish = useCallback(async () => {
     if (completingRef.current) return;
     completingRef.current = true;
-    const res = await fetch(`/api/sessions/${sessionId}/complete`, {
-      method: "POST",
-    });
-    if (res.ok) {
-      router.push(`/result/${sessionId}`);
-    } else {
+    setCompletionRetryable(false);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/complete`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        router.push(`/result/${sessionId}`);
+        return;
+      }
       const d = await res.json().catch(() => ({}));
       setError(d.error || "Không thể hoàn tất phiên chơi.");
+      setCompletionRetryable(res.status === 503);
+    } catch {
+      setError("Không thể xác nhận kết quả. Vui lòng thử hoàn tất lại.");
+      setCompletionRetryable(true);
+    } finally {
+      completingRef.current = false;
     }
   }, [sessionId, router]);
 
@@ -102,12 +122,12 @@ export default function PlaySessionPage() {
       const elapsed = (Date.now() - new Date(startedAt).getTime()) / 1000;
       const left = Math.max(0, Math.round(durationSeconds - elapsed));
       setSecondsLeft(left);
-      if (left <= 0) finish();
+      if (left <= 0 && !completionRetryable) finish();
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [startedAt, durationSeconds, status, finish]);
+  }, [startedAt, durationSeconds, status, completionRetryable, finish]);
 
   const currentQuestion = useMemo(
     () => (questions ? questions[currentIndex] : undefined),
@@ -116,13 +136,23 @@ export default function PlaySessionPage() {
 
   async function requestHint() {
     if (!currentQuestion) return;
-    const res = await fetch(
-      `/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`,
-    );
-    const data = await res.json();
-    if (res.ok) {
+    setHintRetryable(false);
+    try {
+      const res = await fetch(
+        `/api/sessions/${sessionId}/hint?questionId=${currentQuestion.id}`,
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Không thể tải gợi ý.");
+        setHintRetryable(res.status === 503);
+        return;
+      }
+      setError(null);
       setHint(data.hint);
       setUsedHint(true);
+    } catch {
+      setError("Không thể tải gợi ý do kết nối tạm thời bị gián đoạn.");
+      setHintRetryable(true);
     }
   }
 
@@ -158,24 +188,31 @@ export default function PlaySessionPage() {
     }
 
     setError(null);
+    setAnswerNeedsSync(false);
     unlockAudio();
-    const res = await fetch(`/api/sessions/${sessionId}/answer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Không thể gửi câu trả lời.");
-      return;
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Không thể gửi câu trả lời.");
+        setAnswerNeedsSync(res.status === 503);
+        return;
+      }
+      setFeedback({
+        isCorrect: data.isCorrect,
+        pointsEarned: data.pointsEarned,
+        correctIndex: data.correctIndex,
+        correctAnswer: data.correctAnswer,
+        correctOrder: data.correctOrder,
+      });
+    } catch {
+      setError("Không thể xác nhận câu trả lời. Hãy tải lại phiên để đồng bộ.");
+      setAnswerNeedsSync(true);
     }
-    setFeedback({
-      isCorrect: data.isCorrect,
-      pointsEarned: data.pointsEarned,
-      correctIndex: data.correctIndex,
-      correctAnswer: data.correctAnswer,
-      correctOrder: data.correctOrder,
-    });
   }
 
   function next() {
@@ -185,6 +222,7 @@ export default function PlaySessionPage() {
     setPlacedIndices([]);
     setFeedback(null);
     setHint(null);
+    setHintRetryable(false);
     setUsedHint(false);
     if (currentIndex + 1 >= questions.length) {
       finish();
@@ -193,6 +231,8 @@ export default function PlaySessionPage() {
     }
   }
 
+  if (error && !questions && loadErrorRetryable)
+    return <TemporaryUnavailableNotice onRetry={() => window.location.reload()} />;
   if (error && !questions) return <p className="card text-red-600">{error}</p>;
   if (!questions) return <p className="text-muted">Đang tải...</p>;
   if (!currentQuestion) return <p className="text-muted">Đang hoàn tất...</p>;
@@ -300,7 +340,21 @@ export default function PlaySessionPage() {
           </p>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {hintRetryable ? (
+          <div className="space-y-2">
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <TemporaryUnavailableNotice onRetry={() => void requestHint()} />
+          </div>
+        ) : completionRetryable ? (
+          <TemporaryUnavailableNotice onRetry={() => void finish()} />
+        ) : answerNeedsSync ? (
+          <div className="space-y-2">
+            <p className="text-sm text-red-600">{error}</p>
+            <TemporaryUnavailableNotice onRetry={() => window.location.reload()} />
+          </div>
+        ) : (
+          error && <p className="text-sm text-red-600">{error}</p>
+        )}
 
         <div className="flex items-center justify-between">
           {!feedback && currentQuestion.hasHint && (

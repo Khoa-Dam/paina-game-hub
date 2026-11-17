@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployee } from "@/lib/guards";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export const GET = withApiErrorHandling(async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
   const { employee, response } = await requireEmployee();
   if (!employee) return response;
   const { slug } = await params;
@@ -29,7 +33,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     },
   });
   if (!game || !["PUBLISHED", "ACTIVE", "CLOSED"].includes(game.status)) {
-    return NextResponse.json({ error: "Không tìm thấy game." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Không tìm thấy game." },
+      { status: 404 },
+    );
   }
 
   const playsUsed = await prisma.gameResult.count({
@@ -38,8 +45,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 
   const now = new Date();
   const withinWindow =
-    (!game.startAt || game.startAt <= now) && (!game.endAt || game.endAt >= now);
-  const canPlay = game.status === "ACTIVE" && withinWindow && playsUsed < game.maxPlaysPerUser;
+    (!game.startAt || game.startAt <= now) &&
+    (!game.endAt || game.endAt >= now);
+  const canPlay =
+    game.status === "ACTIVE" &&
+    withinWindow &&
+    playsUsed < game.maxPlaysPerUser;
 
   return NextResponse.json({ game, playsUsed, canPlay });
-}
+});

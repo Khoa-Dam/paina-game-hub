@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployee } from "@/lib/guards";
 import { buildClientQuestion } from "@/lib/gameEngine";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withApiErrorHandling(async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { employee, response } = await requireEmployee();
   if (!employee) return response;
   const { id } = await params;
@@ -16,7 +20,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   if (!session || session.employeeId !== employee.id) {
-    return NextResponse.json({ error: "Không tìm thấy phiên chơi." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Không tìm thấy phiên chơi." },
+      { status: 404 },
+    );
   }
 
   const answeredIds = new Set(session.answers.map((a) => a.questionId));
@@ -29,7 +36,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     gameType: session.game.type,
     gameTitle: session.game.title,
     questions: session.game.questions.map((q) =>
-      buildClientQuestion(q, session.game.type, q.correctJson, session.id, answeredIds.has(q.id))
+      buildClientQuestion(
+        q,
+        session.game.type,
+        q.correctJson,
+        session.id,
+        answeredIds.has(q.id),
+      ),
     ),
   });
-}
+});

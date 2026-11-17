@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { employeeCodeSchema } from "@/lib/validators";
+import { withApiErrorHandling } from "@/lib/apiErrorResponse";
 
-export async function POST(req: NextRequest) {
+export const POST = withApiErrorHandling(async function POST(req: NextRequest) {
   const parsed = employeeCodeSchema.safeParse(
     await req.json().catch(() => null),
   );
@@ -23,4 +24,4 @@ export async function POST(req: NextRequest) {
         ? "LOGIN"
         : "PASSWORD_REQUIRED",
   });
-}
+});
