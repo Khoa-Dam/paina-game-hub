@@ -100,7 +100,12 @@ export function useEmployeeLogin() {
           ),
         },
       );
-      await parseApiResponse(response);
+      const result = await parseApiResponse<{ status?: "PENDING" }>(response);
+      if (registering || result.status === "PENDING") {
+        setAccountState("PENDING");
+        setForm(INITIAL_FORM);
+        return;
+      }
       router.push("/home");
       router.refresh();
     } catch (requestError) {

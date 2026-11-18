@@ -24,8 +24,17 @@ export const POST = withApiErrorHandling(async function POST(req: NextRequest) {
     !(await bcrypt.compare(parsed.data.password, employee.passwordHash))
   ) {
     return NextResponse.json(
-      { error: "Mã nhân viên hoặc mật khẩu không đúng." },
+      {
+        error:
+          "Mã nhân viên hoặc mật khẩu không đúng. Nếu quên mật khẩu, vui lòng liên hệ Admin để đặt lại.",
+      },
       { status: 401 },
+    );
+  }
+  if (employee.status === "PENDING") {
+    return NextResponse.json(
+      { error: "Tài khoản đang chờ Admin duyệt." },
+      { status: 403 },
     );
   }
   if (employee.status !== "ACTIVE") {

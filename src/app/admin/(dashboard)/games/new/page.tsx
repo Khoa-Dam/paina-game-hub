@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import { getAdminErrorMessage, readAdminResponse } from "@/lib/adminApi";
 
 const GAME_TYPES = [
   { value: "QUIZ", label: "Trắc nghiệm (Quiz)", desc: "Chọn 1 đáp án đúng trong nhiều lựa chọn." },
@@ -20,6 +22,7 @@ const GAME_TYPES = [
 
 export default function NewGamePage() {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const [type, setType] = useState("QUIZ");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -52,12 +55,16 @@ export default function NewGamePage() {
           hintPenalty: Number(hintPenalty),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(JSON.stringify(data.error));
-        return;
-      }
+      const data = await readAdminResponse<{ game: { id: string } }>(
+        res,
+        "Không thể tạo game.",
+      );
+      showToast("Đã tạo game mới.");
       router.push(`/admin/games/${data.game.id}`);
+    } catch (error) {
+      const message = getAdminErrorMessage(error, "Không thể tạo game.");
+      setError(message);
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }

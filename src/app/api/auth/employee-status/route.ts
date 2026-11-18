@@ -15,13 +15,17 @@ export const POST = withApiErrorHandling(async function POST(req: NextRequest) {
 
   const employee = await prisma.employee.findUnique({
     where: { employeeCode: parsed.data.employeeCode },
-    select: { passwordHash: true },
+    select: { passwordHash: true, status: true },
   });
   return NextResponse.json({
     status: !employee
       ? "NEW"
-      : employee.passwordHash
-        ? "LOGIN"
-        : "PASSWORD_REQUIRED",
+      : employee.status === "PENDING"
+        ? "PENDING"
+        : employee.status !== "ACTIVE"
+          ? "INACTIVE"
+          : employee.passwordHash
+            ? "LOGIN"
+            : "NEW",
   });
 });

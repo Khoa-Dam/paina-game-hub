@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import { getAdminErrorMessage, readAdminResponse } from "@/lib/adminApi";
 
 type Department = {
   id: string;
@@ -17,7 +19,7 @@ export default function AdminDepartmentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ code: "", name: "", sortOrder: "0" });
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   async function load() {
     const res = await fetch("/api/admin/departments");
@@ -35,25 +37,23 @@ export default function AdminDepartmentsPage() {
 
   async function createDepartment(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setMessage(null);
-    const res = await fetch("/api/admin/departments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: form.code,
-        name: form.name,
-        sortOrder: Number(form.sortOrder),
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Không thể thêm phòng ban.");
-      return;
+    try {
+      const response = await fetch("/api/admin/departments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: form.code,
+          name: form.name,
+          sortOrder: Number(form.sortOrder),
+        }),
+      });
+      await readAdminResponse(response, "Không thể thêm phòng ban.");
+      setForm({ code: "", name: "", sortOrder: "0" });
+      await load();
+      showToast("Đã thêm phòng ban.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể thêm phòng ban."), "error");
     }
-    setForm({ code: "", name: "", sortOrder: "0" });
-    setMessage("Đã thêm phòng ban.");
-    await load();
   }
 
   function startEdit(department: Department) {
@@ -64,61 +64,63 @@ export default function AdminDepartmentsPage() {
       sortOrder: String(department.sortOrder),
     });
     setError(null);
-    setMessage(null);
   }
 
   async function saveEdit(id: string) {
-    setError(null);
-    setMessage(null);
-    const res = await fetch(`/api/admin/departments/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: editForm.code,
-        name: editForm.name,
-        sortOrder: Number(editForm.sortOrder),
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Không thể cập nhật phòng ban.");
-      return;
+    try {
+      const response = await fetch(`/api/admin/departments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: editForm.code,
+          name: editForm.name,
+          sortOrder: Number(editForm.sortOrder),
+        }),
+      });
+      await readAdminResponse(response, "Không thể cập nhật phòng ban.");
+      setEditingId(null);
+      await load();
+      showToast("Đã cập nhật phòng ban.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể cập nhật phòng ban."), "error");
     }
-    setEditingId(null);
-    setMessage("Đã cập nhật phòng ban.");
-    await load();
   }
 
   async function toggleActive(department: Department) {
-    setError(null);
-    setMessage(null);
-    const res = await fetch(`/api/admin/departments/${department.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !department.isActive }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Không thể đổi trạng thái phòng ban.");
-      return;
+    try {
+      const response = await fetch(`/api/admin/departments/${department.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !department.isActive }),
+      });
+      await readAdminResponse(response, "Không thể đổi trạng thái phòng ban.");
+      await load();
+      showToast(
+        department.isActive
+          ? "Đã ngừng hoạt động phòng ban."
+          : "Đã kích hoạt phòng ban.",
+      );
+    } catch (error) {
+      showToast(
+        getAdminErrorMessage(error, "Không thể đổi trạng thái phòng ban."),
+        "error",
+      );
     }
-    setMessage(department.isActive ? "Đã ngừng hoạt động phòng ban." : "Đã kích hoạt phòng ban.");
-    await load();
   }
 
   async function remove(department: Department) {
     if (department._count.employees > 0) return;
     if (!confirm(`Xóa phòng ban “${department.name}”?`)) return;
-    setError(null);
-    setMessage(null);
-    const res = await fetch(`/api/admin/departments/${department.id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Không thể xóa phòng ban.");
-      return;
+    try {
+      const response = await fetch(`/api/admin/departments/${department.id}`, {
+        method: "DELETE",
+      });
+      await readAdminResponse(response, "Không thể xóa phòng ban.");
+      await load();
+      showToast("Đã xóa phòng ban.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể xóa phòng ban."), "error");
     }
-    setMessage("Đã xóa phòng ban.");
-    await load();
   }
 
   return (
@@ -157,7 +159,6 @@ export default function AdminDepartmentsPage() {
       </form>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {message && <p className="text-sm text-ink">{message}</p>}
       {!departments && <p className="text-muted">Đang tải...</p>}
 
       {departments && (

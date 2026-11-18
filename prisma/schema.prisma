@@ -11,7 +11,7 @@ datasource db {
 // Status/type fields below are plain String columns (carried over from an
 // earlier SQLite-compatible schema) with allowed values enforced in
 // lib/validators.ts (zod) rather than native Postgres enums.
-//   EmployeeStatus: ACTIVE | INACTIVE
+//   EmployeeStatus: ACTIVE | INACTIVE | PENDING
 //   GameType: QUIZ | PICTURE_GUESSING | TRUE_FALSE | WORD_PUZZLE
 //   GameStatus: DRAFT | PUBLISHED | ACTIVE | CLOSED | ARCHIVED
 //   SessionStatus: IN_PROGRESS | COMPLETED | EXPIRED

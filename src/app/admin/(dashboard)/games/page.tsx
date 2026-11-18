@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import { getAdminErrorMessage, readAdminResponse } from "@/lib/adminApi";
 
 type GameRow = {
   id: string;
@@ -38,39 +40,66 @@ const TYPE_LABELS: Record<string, string> = {
 export default function AdminGamesPage() {
   const [games, setGames] = useState<GameRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
-  function load() {
-    fetch("/api/admin/games")
-      .then((r) => r.json())
-      .then((d) => setGames(d.games || []));
+  async function load() {
+    try {
+      const response = await fetch("/api/admin/games");
+      const data = await readAdminResponse<{ games?: GameRow[] }>(
+        response,
+        "Không thể tải danh sách game.",
+      );
+      setGames(data.games || []);
+      setError(null);
+    } catch (error) {
+      setError(getAdminErrorMessage(error, "Không thể tải danh sách game."));
+    }
   }
 
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function changeStatus(id: string, status: string) {
-    setError(null);
-    const res = await fetch(`/api/admin/games/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    const d = await res.json();
-    if (!res.ok) {
-      setError(d.error || "Không thể đổi trạng thái.");
-      return;
+    try {
+      const response = await fetch(`/api/admin/games/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await readAdminResponse(response, "Không thể đổi trạng thái game.");
+      await load();
+      showToast("Đã cập nhật trạng thái game.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể đổi trạng thái game."), "error");
     }
-    load();
   }
 
   async function duplicate(id: string) {
-    await fetch(`/api/admin/games/${id}/duplicate`, { method: "POST" });
-    load();
+    try {
+      const response = await fetch(`/api/admin/games/${id}/duplicate`, {
+        method: "POST",
+      });
+      await readAdminResponse(response, "Không thể sao chép game.");
+      await load();
+      showToast("Đã sao chép game.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể sao chép game."), "error");
+    }
   }
 
   async function remove(id: string) {
     if (!confirm("Xóa game này? Hành động không thể hoàn tác.")) return;
-    await fetch(`/api/admin/games/${id}`, { method: "DELETE" });
-    load();
+    try {
+      const response = await fetch(`/api/admin/games/${id}`, {
+        method: "DELETE",
+      });
+      await readAdminResponse(response, "Không thể xóa game.");
+      await load();
+      showToast("Đã xóa game.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể xóa game."), "error");
+    }
   }
 
   return (

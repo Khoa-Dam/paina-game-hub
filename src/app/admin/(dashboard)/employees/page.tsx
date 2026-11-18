@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import {
+  getAdminErrorMessage,
+  readAdminResponse,
+} from "@/lib/adminApi";
 
 type Department = {
   id: string;
@@ -18,7 +23,7 @@ type Employee = {
   departmentInfo: Department | null;
   legacyDepartment: string | null;
   hasPassword: boolean;
-  status: "ACTIVE" | "INACTIVE";
+  status: "ACTIVE" | "INACTIVE" | "PENDING";
 };
 
 const EMPTY_FORM = {
@@ -58,7 +63,12 @@ export default function AdminEmployeesPage() {
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [setupUrl, setSetupUrl] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [passwordTargetId, setPasswordTargetId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useAdminToast();
 
   async function load() {
     setError(null);
@@ -100,21 +110,19 @@ export default function AdminEmployeesPage() {
 
   async function createEmployee(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    const res = await fetch("/api/admin/employees", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, status: "ACTIVE" }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(
-        typeof data.error === "string" ? data.error : "Không thể tạo nhân sự.",
-      );
-      return;
+    try {
+      const response = await fetch("/api/admin/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, status: "ACTIVE" }),
+      });
+      await readAdminResponse(response, "Không thể tạo nhân sự.");
+      setForm(EMPTY_FORM);
+      await load();
+      showToast("Đã thêm nhân sự.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể tạo nhân sự."), "error");
     }
-    setForm(EMPTY_FORM);
-    await load();
   }
 
   function startEdit(employee: Employee) {
@@ -130,7 +138,6 @@ export default function AdminEmployeesPage() {
 
   async function saveEdit(id: string) {
     setSavingEdit(true);
-    setError(null);
     try {
       const res = await fetch(`/api/admin/employees/${id}`, {
         method: "PATCH",
@@ -142,68 +149,134 @@ export default function AdminEmployeesPage() {
           departmentId: editForm.departmentId || null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : "Không thể cập nhật nhân sự.",
-        );
-        return;
-      }
+      await readAdminResponse(res, "Không thể cập nhật nhân sự.");
       setEditingId(null);
       await load();
+      showToast("Đã cập nhật thông tin nhân sự.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể cập nhật nhân sự."), "error");
     } finally {
       setSavingEdit(false);
     }
   }
 
   async function toggleStatus(employee: Employee) {
-    await fetch(`/api/admin/employees/${employee.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: employee.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-      }),
-    });
-    await load();
+    if (employee.status === "PENDING") return;
+    const nextStatus = employee.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    try {
+      const response = await fetch(`/api/admin/employees/${employee.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      await readAdminResponse(response, "Không thể đổi trạng thái tài khoản.");
+      await load();
+      showToast(nextStatus === "ACTIVE" ? "Đã mở khóa tài khoản." : "Đã tạm khóa tài khoản.");
+    } catch (error) {
+      showToast(
+        getAdminErrorMessage(error, "Không thể đổi trạng thái tài khoản."),
+        "error",
+      );
+    }
+  }
+
+  async function approveRegistration(employee: Employee) {
+    try {
+      const response = await fetch(
+        `/api/admin/employees/${employee.id}/approve`,
+        { method: "POST" },
+      );
+      await readAdminResponse(response, "Không thể duyệt tài khoản.");
+      await load();
+      showToast(`Đã duyệt tài khoản ${employee.employeeCode}.`);
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể duyệt tài khoản."), "error");
+    }
+  }
+
+  async function setEmployeePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!passwordTargetId) return;
+    if (newPassword !== passwordConfirmation) {
+      showToast("Mật khẩu xác nhận không khớp.", "error");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const response = await fetch(
+        `/api/admin/employees/${passwordTargetId}/password`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: newPassword }),
+        },
+      );
+      await readAdminResponse(response, "Không thể đặt mật khẩu mới.");
+      const employee = employees?.find((item) => item.id === passwordTargetId);
+      setPasswordTargetId(null);
+      setNewPassword("");
+      setPasswordConfirmation("");
+      await load();
+      showToast(`Đã đặt mật khẩu mới cho ${employee?.employeeCode ?? "nhân sự"}.`);
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể đặt mật khẩu mới."), "error");
+    } finally {
+      setSavingPassword(false);
+    }
   }
 
   async function remove(id: string) {
     if (!confirm("Xóa nhân sự này?")) return;
-    await fetch(`/api/admin/employees/${id}`, { method: "DELETE" });
-    await load();
+    const employee = employees?.find((item) => item.id === id);
+    try {
+      const response = await fetch(`/api/admin/employees/${id}`, {
+        method: "DELETE",
+      });
+      await readAdminResponse(response, "Không thể xóa nhân sự.");
+      await load();
+      showToast(`Đã xóa nhân sự ${employee?.employeeCode ?? ""}.`.trim());
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể xóa nhân sự."), "error");
+    }
   }
 
   async function issuePasswordSetup(employee: Employee) {
-    setError(null);
     setSetupUrl(null);
-    const res = await fetch(
-      `/api/admin/employees/${employee.id}/password-setup`,
-      { method: "POST" },
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      setError(
-        typeof data.error === "string"
-          ? data.error
-          : "Không thể tạo link đặt mật khẩu.",
+    try {
+      const response = await fetch(
+        `/api/admin/employees/${employee.id}/password-setup`,
+        { method: "POST" },
       );
-      return;
+      const data = await readAdminResponse<{ url: string }>(
+        response,
+        "Không thể tạo link đặt mật khẩu.",
+      );
+      setSetupUrl(data.url);
+      showToast("Đã tạo link đặt mật khẩu.");
+    } catch (error) {
+      showToast(
+        getAdminErrorMessage(error, "Không thể tạo link đặt mật khẩu."),
+        "error",
+      );
     }
-    setSetupUrl(data.url);
   }
 
   async function importCsv(file: File) {
     setImportMessage(null);
-    const text = await file.text();
-    const res = await fetch("/api/admin/employees/import", {
-      method: "POST",
-      headers: { "Content-Type": "text/csv" },
-      body: text,
-    });
-    const data = await res.json();
-    if (res.ok) {
+    try {
+      const text = await file.text();
+      const response = await fetch("/api/admin/employees/import", {
+        method: "POST",
+        headers: { "Content-Type": "text/csv" },
+        body: text,
+      });
+      const data = await readAdminResponse<{
+        created: number;
+        updated: number;
+        skipped: number;
+        invalidDepartments?: string[];
+      }>(response, "Import thất bại.");
       const invalid = data.invalidDepartments?.length
         ? ` Phòng ban không khớp danh mục: ${data.invalidDepartments.join(", ")}.`
         : "";
@@ -211,10 +284,23 @@ export default function AdminEmployeesPage() {
         `Đã thêm ${data.created}, cập nhật ${data.updated}, bỏ qua ${data.skipped}.${invalid}`,
       );
       await load();
-    } else {
-      setImportMessage(data.error || "Import thất bại.");
+      showToast("Đã import danh sách nhân sự.");
+    } catch (error) {
+      const message = getAdminErrorMessage(error, "Import thất bại.");
+      setImportMessage(message);
+      showToast(message, "error");
     }
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function copySetupUrl() {
+    if (!setupUrl) return;
+    try {
+      await navigator.clipboard.writeText(setupUrl);
+      showToast("Đã sao chép link đặt mật khẩu.");
+    } catch {
+      showToast("Không thể sao chép link. Hãy chọn và sao chép thủ công.", "error");
+    }
   }
 
   function departmentLabel(employee: Employee) {
@@ -304,7 +390,7 @@ export default function AdminEmployeesPage() {
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => navigator.clipboard?.writeText(setupUrl)}
+            onClick={() => void copySetupUrl()}
           >
             Sao chép link
           </button>
@@ -312,6 +398,14 @@ export default function AdminEmployeesPage() {
       )}
 
       {!employees && <p className="text-muted">Đang tải...</p>}
+      {employees?.some((employee) => employee.status === "PENDING") && (
+        <p
+          className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+          role="status"
+        >
+          Có {employees.filter((employee) => employee.status === "PENDING").length} tài khoản đang chờ duyệt. Các yêu cầu này được hiển thị đầu danh sách.
+        </p>
+      )}
       {employees && (
         <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">
@@ -326,7 +420,13 @@ export default function AdminEmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {employees.map((employee) =>
+              {[...employees]
+                .sort(
+                  (first, second) =>
+                    Number(second.status === "PENDING") -
+                    Number(first.status === "PENDING"),
+                )
+                .map((employee) =>
                 editingId === employee.id ? (
                   <tr
                     key={employee.id}
@@ -404,7 +504,9 @@ export default function AdminEmployeesPage() {
                     <td className="px-4 py-3">
                       {employee.status === "ACTIVE"
                         ? "Hoạt động"
-                        : "Ngừng hoạt động"}
+                        : employee.status === "PENDING"
+                          ? "Chờ duyệt"
+                          : "Ngừng hoạt động"}
                     </td>
                     <td className="px-2 py-3">
                       <div className="flex gap-2 whitespace-nowrap">
@@ -447,20 +549,41 @@ export default function AdminEmployeesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`badge ${employee.status === "ACTIVE" ? "bg-lime-200 text-lime-800" : "bg-gray-200 text-gray-600"}`}
+                        className={`badge ${employee.status === "ACTIVE" ? "bg-lime-200 text-lime-800" : employee.status === "PENDING" ? "bg-amber-200 text-amber-900" : "bg-gray-200 text-gray-600"}`}
                       >
                         {employee.status === "ACTIVE"
                           ? "Hoạt động"
-                          : "Ngừng hoạt động"}
+                          : employee.status === "PENDING"
+                            ? "Chờ duyệt"
+                            : "Ngừng hoạt động"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-3 whitespace-nowrap">
+                        {employee.status === "PENDING" && (
+                          <button
+                            onClick={() => void approveRegistration(employee)}
+                            className="text-xs font-semibold text-lime-700 hover:underline"
+                          >
+                            Duyệt tài khoản
+                          </button>
+                        )}
                         <button
                           onClick={() => startEdit(employee)}
                           className="text-xs text-ink hover:underline"
                         >
                           Sửa
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPasswordTargetId(employee.id);
+                            setNewPassword("");
+                            setPasswordConfirmation("");
+                          }}
+                          disabled={employee.status !== "ACTIVE"}
+                          className="text-xs text-ink hover:underline disabled:opacity-40"
+                        >
+                          Đặt mật khẩu mới
                         </button>
                         <button
                           onClick={() => void issuePasswordSetup(employee)}
@@ -471,12 +594,14 @@ export default function AdminEmployeesPage() {
                             ? "Reset mật khẩu"
                             : "Cấp link đặt mật khẩu"}
                         </button>
-                        <button
-                          onClick={() => void toggleStatus(employee)}
-                          className="text-xs text-ink hover:underline"
-                        >
-                          {employee.status === "ACTIVE" ? "Tạm khóa" : "Mở lại"}
-                        </button>
+                        {employee.status !== "PENDING" && (
+                          <button
+                            onClick={() => void toggleStatus(employee)}
+                            className="text-xs text-ink hover:underline"
+                          >
+                            {employee.status === "ACTIVE" ? "Tạm khóa" : "Mở lại"}
+                          </button>
+                        )}
                         <button
                           onClick={() => void remove(employee.id)}
                           className="text-xs text-red-500 hover:text-red-700"
@@ -484,6 +609,67 @@ export default function AdminEmployeesPage() {
                           Xóa
                         </button>
                       </div>
+                      {passwordTargetId === employee.id && (
+                        <form
+                          onSubmit={setEmployeePassword}
+                          className="mt-3 grid min-w-64 gap-2 rounded-xl border border-border p-3"
+                        >
+                          <label
+                            className="text-xs font-medium"
+                            htmlFor={`new-password-${employee.id}`}
+                          >
+                            Mật khẩu mới (ít nhất 10 ký tự)
+                          </label>
+                          <input
+                            id={`new-password-${employee.id}`}
+                            className="input"
+                            type="password"
+                            autoComplete="new-password"
+                            minLength={10}
+                            maxLength={72}
+                            value={newPassword}
+                            onChange={(event) =>
+                              setNewPassword(event.target.value)
+                            }
+                            required
+                          />
+                          <label
+                            className="text-xs font-medium"
+                            htmlFor={`confirm-password-${employee.id}`}
+                          >
+                            Nhập lại mật khẩu mới
+                          </label>
+                          <input
+                            id={`confirm-password-${employee.id}`}
+                            className="input"
+                            type="password"
+                            autoComplete="new-password"
+                            minLength={10}
+                            maxLength={72}
+                            value={passwordConfirmation}
+                            onChange={(event) =>
+                              setPasswordConfirmation(event.target.value)
+                            }
+                            required
+                          />
+                          <div className="flex gap-3">
+                            <button
+                              type="submit"
+                              disabled={savingPassword}
+                              className="text-xs font-semibold text-ink hover:underline disabled:opacity-50"
+                            >
+                              {savingPassword ? "Đang lưu..." : "Lưu mật khẩu"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPasswordTargetId(null)}
+                              className="text-xs text-muted hover:underline"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </form>
+                      )}
                     </td>
                   </tr>
                 ),

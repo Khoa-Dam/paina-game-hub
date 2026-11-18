@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import { getAdminErrorMessage, readAdminResponse } from "@/lib/adminApi";
 
 type Question = {
   id: string;
@@ -58,6 +60,7 @@ async function readUploadedImageUrl(response: Response): Promise<string> {
 
 export default function AdminGameDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { showToast } = useAdminToast();
   const [game, setGame] = useState<Game | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -94,13 +97,14 @@ export default function AdminGameDetailPage() {
           hintPenalty: game.hintPenalty,
         }),
       });
-      if (res.ok) {
-        await load();
-        setMessage("Đã lưu cấu hình game.");
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setMessage(data.error || "Không thể lưu cấu hình game.");
-      }
+      await readAdminResponse(res, "Không thể lưu cấu hình game.");
+      await load();
+      setMessage(null);
+      showToast("Đã lưu cấu hình game.");
+    } catch (error) {
+      const message = getAdminErrorMessage(error, "Không thể lưu cấu hình game.");
+      setMessage(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -117,10 +121,11 @@ export default function AdminGameDetailPage() {
       setGame((current) =>
         current ? { ...current, coverImageUrl: url } : current,
       );
+      showToast("Đã tải ảnh đại diện lên.");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Tải ảnh lên thất bại.",
-      );
+      const message = getAdminErrorMessage(error, "Tải ảnh lên thất bại.");
+      setMessage(message);
+      showToast(message, "error");
     } finally {
       setUploadingCover(false);
     }
@@ -305,6 +310,7 @@ function QuestionsEditor({
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const { showToast } = useAdminToast();
 
   async function uploadQuestionImage(file: File) {
     const form = new FormData();
@@ -315,12 +321,14 @@ function QuestionsEditor({
     try {
       const res = await fetch("/api/admin/upload", { method: "POST", body: form });
       setImageUrl(await readUploadedImageUrl(res));
+      showToast("Đã tải ảnh câu hỏi lên.");
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Tải ảnh gợi ý lên thất bại.",
+      const message = getAdminErrorMessage(
+        uploadError,
+        "Tải ảnh gợi ý lên thất bại.",
       );
+      setError(message);
+      showToast(message, "error");
     } finally {
       setUploadingImage(false);
     }
@@ -380,21 +388,20 @@ function QuestionsEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json().catch(() => null)) as
-        | { error?: unknown }
-        | null;
-      if (!res.ok) {
-        setError(
-          typeof data?.error === "string"
-            ? data.error
-            : `Thêm câu hỏi thất bại (HTTP ${res.status}).`,
-        );
-        return;
-      }
+      await readAdminResponse(
+        res,
+        `Thêm câu hỏi thất bại (HTTP ${res.status}).`,
+      );
       resetForm();
       onChanged();
-    } catch {
-      setError("Không thể kết nối máy chủ để thêm câu hỏi. Vui lòng thử lại.");
+      showToast("Đã thêm câu hỏi.");
+    } catch (error) {
+      const message = getAdminErrorMessage(
+        error,
+        "Không thể kết nối máy chủ để thêm câu hỏi. Vui lòng thử lại.",
+      );
+      setError(message);
+      showToast(message, "error");
     } finally {
       setAdding(false);
     }
@@ -402,8 +409,17 @@ function QuestionsEditor({
 
   async function removeQuestion(qid: string) {
     if (!confirm("Xóa câu hỏi này?")) return;
-    await fetch(`/api/admin/games/${gameId}/questions/${qid}`, { method: "DELETE" });
-    onChanged();
+    try {
+      const response = await fetch(
+        `/api/admin/games/${gameId}/questions/${qid}`,
+        { method: "DELETE" },
+      );
+      await readAdminResponse(response, "Không thể xóa câu hỏi.");
+      onChanged();
+      showToast("Đã xóa câu hỏi.");
+    } catch (error) {
+      showToast(getAdminErrorMessage(error, "Không thể xóa câu hỏi."), "error");
+    }
   }
 
   return (

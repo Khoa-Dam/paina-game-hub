@@ -30,7 +30,11 @@ export const employeeUpsertSchema = z.object({
   fullName: z.string().trim().min(1).max(200),
   email: z.string().trim().email().optional().or(z.literal("")),
   departmentId: z.string().trim().min(1).optional().nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  status: z.enum(["ACTIVE", "INACTIVE", "PENDING"]).default("ACTIVE"),
+});
+
+export const adminEmployeePasswordSchema = z.object({
+  password: z.string().min(10).max(72),
 });
 
 export const employeeCreateSchema = employeeUpsertSchema.extend({

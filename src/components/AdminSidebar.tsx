@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Pineapple from "./Pineapple";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard" },
@@ -18,11 +19,20 @@ const LINKS = [
 export default function AdminSidebar({ username }: { username: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { showToast } = useAdminToast();
 
   async function logout() {
-    await fetch("/api/auth/admin-logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
+    try {
+      const response = await fetch("/api/auth/admin-logout", { method: "POST" });
+      if (!response.ok) throw new Error("Không thể đăng xuất. Vui lòng thử lại.");
+      router.push("/admin/login");
+      router.refresh();
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Không thể đăng xuất.",
+        "error",
+      );
+    }
   }
 
   return (

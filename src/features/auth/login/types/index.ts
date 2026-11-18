@@ -4,7 +4,12 @@ export type DepartmentOption = {
   name: string;
 };
 
-export type AccountState = "NEW" | "LOGIN" | "PASSWORD_REQUIRED";
+export type AccountState =
+  | "NEW"
+  | "LOGIN"
+  | "PASSWORD_REQUIRED"
+  | "PENDING"
+  | "INACTIVE";
 
 export type LoginFormValues = {
   fullName: string;

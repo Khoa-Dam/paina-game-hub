@@ -65,13 +65,25 @@ export default function EmployeeLoginForm() {
 
           {login.accountState === "LOGIN" && (
             <p className="rounded-xl bg-sky-50 p-3 text-sm text-sky-800">
-              Nhập mật khẩu để đăng nhập.
+              Nhập mật khẩu để đăng nhập. Nếu quên mật khẩu, vui lòng liên hệ
+              Admin để được đặt lại.
             </p>
           )}
           {login.accountState === "PASSWORD_REQUIRED" && (
             <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
               Tài khoản này cần thiết lập mật khẩu lần đầu. Vui lòng liên hệ
               Admin để nhận link đặt mật khẩu.
+            </p>
+          )}
+
+          {login.accountState === "PENDING" && (
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="status">
+              Tài khoản đã được gửi để Admin duyệt. Bạn có thể đăng nhập sau khi tài khoản được duyệt.
+            </p>
+          )}
+          {login.accountState === "INACTIVE" && (
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="alert">
+              Tài khoản đang tạm khóa. Vui lòng liên hệ Admin.
             </p>
           )}
 
@@ -119,7 +131,7 @@ function RegistrationFields({
   return (
     <>
       <p className="rounded-xl bg-lime-50 p-3 text-sm text-lime-800">
-        Mã chưa có tài khoản. Điền thông tin để đăng ký.
+        Điền thông tin để gửi đăng ký. Tài khoản chỉ có thể chơi game sau khi Admin duyệt.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
