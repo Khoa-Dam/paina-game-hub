@@ -82,22 +82,28 @@ export default function EmployeeLoginForm() {
             <p className="rounded-xl bg-sky-50 p-3 text-sm text-sky-800">
               Nhập mật khẩu để đăng nhập. Nếu quên mật khẩu, vui lòng liên hệ
               Admin để được đặt lại.
+              {login.accountState === null && (
+                <>
+                  {" "}Nhập mã NV rồi bấm nút để kiểm tra; nếu chưa có tài khoản,
+                  form sẽ chuyển sang đăng ký.
+                </>
+              )}
             </p>
           )}
 
-          {login.accountState && (
+          {login.error && (
+            <p className="text-sm font-medium text-pink-600" role="alert">
+              {login.error}
+            </p>
+          )}
+          {isRegistration && (
             <button
               type="button"
               className="w-full text-sm text-muted underline"
               onClick={login.resetAccountState}
             >
-              Đổi mã nhân viên
+              Quay về đăng nhập
             </button>
-          )}
-          {login.error && (
-            <p className="text-sm font-medium text-pink-600" role="alert">
-              {login.error}
-            </p>
           )}
           {!login.accountState && login.statusCheckError && (
             <TemporaryUnavailableNotice onRetry={login.retryStatusCheck} />
@@ -140,7 +146,8 @@ function RegistrationFields({
   return (
     <>
       <p className="rounded-xl bg-lime-50 p-3 text-sm text-lime-800">
-        Điền thông tin để gửi đăng ký. Tài khoản chỉ có thể chơi game sau khi Admin duyệt.
+        Mã nhân viên chưa có tài khoản đăng nhập. Hoàn tất thông tin bên dưới
+        để gửi đăng ký; Admin cần duyệt trước khi bạn vào chơi.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -210,7 +217,7 @@ function PasswordFields({
             }
             minLength={isRegistration ? PASSWORD_MIN_LENGTH : undefined}
             maxLength={PASSWORD_MAX_LENGTH}
-            required
+            required={login.accountState !== null}
           />
           {isRegistration && (
             <p className="mt-1 text-xs text-muted">
@@ -248,7 +255,9 @@ function PasswordFields({
           ? "Đang xử lý..."
           : isRegistration
             ? "Tạo tài khoản"
-            : "Đăng nhập"}
+            : login.accountState === null && !login.form.password
+              ? "Kiểm tra mã NV"
+              : "Đăng nhập"}
       </button>
     </>
   );

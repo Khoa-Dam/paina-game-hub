@@ -52,20 +52,24 @@ export function useEmployeeLogin() {
     }
   }
 
-  async function lookupEmployee() {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await fetch(LOGIN_ENDPOINTS.status, {
+  async function fetchEmployeeStatus(): Promise<AccountState> {
+    const response = await fetch(LOGIN_ENDPOINTS.status, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ employeeCode }),
       });
-      const result = await parseApiResponse<EmployeeStatusResponse>(response);
-      setAccountState(result.status);
-      setForm(INITIAL_FORM);
+    const result = await parseApiResponse<EmployeeStatusResponse>(response);
+    return result.status;
+  }
+
+  async function lookupEmployee() {
+    setError(null);
+    setLoading(true);
+    try {
+      const status = await fetchEmployeeStatus();
+      setAccountState(status);
       setStatusCheckError(false);
-      if (result.status === "LOGIN") {
+      if (status === "LOGIN") {
         setError(
           "Mã nhân viên này đã có tài khoản. Nếu quên mật khẩu, vui lòng liên hệ Admin để đặt lại.",
         );
@@ -88,6 +92,26 @@ export function useEmployeeLogin() {
     setLoading(true);
     const registering = accountState === "NEW";
     try {
+      if (!registering) {
+        let status: AccountState | null = accountState;
+        if (status === null) {
+          try {
+            status = await fetchEmployeeStatus();
+            setAccountState(status);
+            setStatusCheckError(false);
+          } catch (requestError) {
+            setStatusCheckError(isRecoverableApiError(requestError));
+            throw requestError;
+          }
+        }
+
+        if (status !== "LOGIN") return;
+        if (!form.password) {
+          setError("Mã nhân viên đã có tài khoản. Hãy nhập mật khẩu để đăng nhập.");
+          return;
+        }
+      }
+
       const response = await fetch(
         registering ? LOGIN_ENDPOINTS.register : LOGIN_ENDPOINTS.login,
         {
