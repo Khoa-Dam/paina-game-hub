@@ -12,6 +12,20 @@ export async function PATCH(
   if (!admin) return response;
   const { id } = await params;
 
+  const currentEmployee = await prisma.employee.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (!currentEmployee) {
+    return NextResponse.json({ error: "Không tìm thấy nhân sự." }, { status: 404 });
+  }
+  if (currentEmployee.status === "PENDING") {
+    return NextResponse.json(
+      { error: "Tài khoản đang chờ duyệt không thể chỉnh sửa." },
+      { status: 409 },
+    );
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = employeeUpsertSchema.partial().safeParse(json);
   if (!parsed.success) {

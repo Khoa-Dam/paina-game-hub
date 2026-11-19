@@ -126,6 +126,7 @@ export default function AdminEmployeesPage() {
   }
 
   function startEdit(employee: Employee) {
+    if (employee.status === "PENDING") return;
     setEditingId(employee.id);
     setEditForm({
       employeeCode: employee.employeeCode,
@@ -568,12 +569,14 @@ export default function AdminEmployeesPage() {
                             Duyệt tài khoản
                           </button>
                         )}
-                        <button
-                          onClick={() => startEdit(employee)}
-                          className="text-xs text-ink hover:underline"
-                        >
-                          Sửa
-                        </button>
+                        {employee.status !== "PENDING" && (
+                          <button
+                            onClick={() => startEdit(employee)}
+                            className="text-xs text-ink hover:underline"
+                          >
+                            Sửa
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setPasswordTargetId(employee.id);
