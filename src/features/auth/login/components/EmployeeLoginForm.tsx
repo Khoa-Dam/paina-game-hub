@@ -8,6 +8,7 @@ import { useEmployeeLogin } from "../hooks/useEmployeeLogin";
 export default function EmployeeLoginForm() {
   const login = useEmployeeLogin();
   const isRegistration = login.accountState === "NEW";
+  const isLogin = login.accountState === null || login.accountState === "LOGIN";
 
   return (
     <main className="relative flex min-h-screen items-start justify-center overflow-x-hidden bg-paper px-4 py-8 sm:py-10">
@@ -24,16 +25,18 @@ export default function EmployeeLoginForm() {
             PAINA GAME HUB
           </h1>
           <p className="mt-2 font-body text-sm text-muted">
-            Đăng ký lần đầu hoặc đăng nhập để vào chơi nhé! 🎮
+            Đăng nhập để vào chơi. Nhân sự mới có thể đăng ký lần đầu. 🎮
           </p>
         </header>
 
         <form
-          onSubmit={
-            login.accountState
-              ? login.submitCredentials
-              : login.checkEmployeeCode
-          }
+          onSubmit={(event) => {
+            if (!isLogin && !isRegistration) {
+              event.preventDefault();
+              return;
+            }
+            void login.submitCredentials(event);
+          }}
           className="card space-y-5 sm:p-7"
         >
           <div>
@@ -51,24 +54,8 @@ export default function EmployeeLoginForm() {
             />
           </div>
 
-          {!login.accountState && (
-            <button
-              type="submit"
-              disabled={login.loading}
-              className="btn-primary w-full"
-            >
-              {login.loading ? "Đang kiểm tra..." : "Tiếp tục"}
-            </button>
-          )}
-
           {isRegistration && <RegistrationFields login={login} />}
 
-          {login.accountState === "LOGIN" && (
-            <p className="rounded-xl bg-sky-50 p-3 text-sm text-sky-800">
-              Nhập mật khẩu để đăng nhập. Nếu quên mật khẩu, vui lòng liên hệ
-              Admin để được đặt lại.
-            </p>
-          )}
           {login.accountState === "PASSWORD_REQUIRED" && (
             <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
               Tài khoản này cần thiết lập mật khẩu lần đầu. Vui lòng liên hệ
@@ -87,8 +74,15 @@ export default function EmployeeLoginForm() {
             </p>
           )}
 
-          {(login.accountState === "NEW" || login.accountState === "LOGIN") && (
+          {(isRegistration || isLogin) && (
             <PasswordFields login={login} isRegistration={isRegistration} />
+          )}
+
+          {isLogin && (
+            <p className="rounded-xl bg-sky-50 p-3 text-sm text-sky-800">
+              Nhập mật khẩu để đăng nhập. Nếu quên mật khẩu, vui lòng liên hệ
+              Admin để được đặt lại.
+            </p>
           )}
 
           {login.accountState && (
@@ -111,12 +105,27 @@ export default function EmployeeLoginForm() {
           {isRegistration && login.departmentLoadError && (
             <TemporaryUnavailableNotice onRetry={login.retryDepartments} />
           )}
-          <p className="text-center text-xs text-muted">
-            Là Admin?{" "}
-            <a href="/admin/login" className="font-semibold text-ink underline">
-              Đăng nhập quản trị
-            </a>
-          </p>
+          <div className="space-y-1 text-center text-xs text-muted">
+            {login.accountState === null && (
+              <p>
+                Sử dụng lần đầu?{" "}
+                <button
+                  type="button"
+                  disabled={login.loading}
+                  className="font-semibold text-ink underline disabled:opacity-50"
+                  onClick={() => void login.offerRegistration()}
+                >
+                  {login.loading ? "Đang kiểm tra mã..." : "Đăng ký"}
+                </button>
+              </p>
+            )}
+            <p>
+              Là Admin?{" "}
+              <a href="/admin/login" className="font-semibold text-ink underline">
+                Đăng nhập quản trị
+              </a>
+            </p>
+          </div>
         </form>
       </div>
     </main>
@@ -199,7 +208,7 @@ function PasswordFields({
             onChange={(event) =>
               login.updateForm("password", event.target.value)
             }
-            minLength={PASSWORD_MIN_LENGTH}
+            minLength={isRegistration ? PASSWORD_MIN_LENGTH : undefined}
             maxLength={PASSWORD_MAX_LENGTH}
             required
           />

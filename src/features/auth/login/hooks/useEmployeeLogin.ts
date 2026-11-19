@@ -52,11 +52,6 @@ export function useEmployeeLogin() {
     }
   }
 
-  async function checkEmployeeCode(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await lookupEmployee();
-  }
-
   async function lookupEmployee() {
     setError(null);
     setLoading(true);
@@ -70,6 +65,11 @@ export function useEmployeeLogin() {
       setAccountState(result.status);
       setForm(INITIAL_FORM);
       setStatusCheckError(false);
+      if (result.status === "LOGIN") {
+        setError(
+          "Mã nhân viên này đã có tài khoản. Nếu quên mật khẩu, vui lòng liên hệ Admin để đặt lại.",
+        );
+      }
     } catch (requestError) {
       setStatusCheckError(isRecoverableApiError(requestError));
       setError(
@@ -130,6 +130,7 @@ export function useEmployeeLogin() {
     setEmployeeCode(value);
     setAccountState(null);
     setStatusCheckError(false);
+    setForm(INITIAL_FORM);
     setError(null);
   }
 
@@ -142,7 +143,6 @@ export function useEmployeeLogin() {
   return {
     accountState,
     changeEmployeeCode,
-    checkEmployeeCode,
     departments,
     departmentLoadError,
     employeeCode,
@@ -150,6 +150,7 @@ export function useEmployeeLogin() {
     form,
     loading,
     retryDepartments,
+    offerRegistration: lookupEmployee,
     resetAccountState,
     retryStatusCheck: lookupEmployee,
     submitCredentials,
